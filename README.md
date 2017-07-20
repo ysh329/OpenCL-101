@@ -1,5 +1,6 @@
 # OpenCL-101
-Learn OpenCL step by step.
+Learn OpenCL step by step as below.
+
 
 
 ## How to compile OpenCL example in GCC?  
