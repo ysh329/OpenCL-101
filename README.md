@@ -1,6 +1,9 @@
 # OpenCL-101
 Learn OpenCL step by step as below.
 
+* ./code/hello-world-from-kernel
+* ./code/tutorial-1.c  
+* ./code/tutorial-2.c  
 
 
 ## How to compile OpenCL example in GCC?  
