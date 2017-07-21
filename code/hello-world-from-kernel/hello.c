@@ -39,14 +39,40 @@ int main()
 
 	source_str = (char*)malloc(MAX_SOURCE_SIZE);
 	source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
+    printf("source_size: %d\n", source_size);
 	fclose(fp);
  
 	/* Get Platform and Device Info */
+	/*	cl_int clGetPlatformIDs(	cl_uint num_entries,
+	 								cl_platform_id *platforms,
+							 		cl_uint *num_platforms)
+        input params:
+        	num_entries: The number of cl_platform_id entries that can be added to platforms.
+						 Platform is NULL or int number, which's bigger than zero.
+
+			*platforms: Returns a list of OpenCL platforms found. 
+						The cl_platform_id values returned in platforms can be used to identify
+						 a specific OpenCL platform. 
+						If platforms argument is NULL, this argument is ignored. 
+						The number of OpenCL platforms returned is the mininum of the value
+						 specified by num_entries or the number of OpenCL platforms available.
+
+			num_platforms: Returns the number of OpenCL platforms available. 
+						   If num_platforms is NULL, this argument is ignored.
+    */
 	ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+
 	ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &ret_num_devices);
+    printf("platform_id: %ld\n", platform_id);
+    printf("ret: %s\n", ret);
+	printf("ret_num_platforms: %u\n", ret_num_platforms);
+	printf("CL_DEVICE_TYPE_DEFAULT: %d\n", CL_DEVICE_TYPE_DEFAULT);
+	printf("device_id: %ld\n", device_id);
+	printf("ret_num_devices: %d\n", ret_num_devices);
  
 	/* Create OpenCL context */
 	context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+    printf("context: %s\n", context);
  
 	/* Create Command Queue */
 	command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
