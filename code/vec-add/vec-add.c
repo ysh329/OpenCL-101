@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include <time.h>
 #include <sys/time.h>
@@ -50,7 +51,7 @@ int main(void) {
 	srand( (unsigned) time(NULL) );
 
 	/* generate vector a and b */
-	int len = 5;
+	int len = 10;
 	int *a, *b, *c;
 	a = (int *) malloc (len * sizeof(int));
 	b = (int *) malloc (len * sizeof(int));
@@ -173,22 +174,51 @@ int main(void) {
 	}
 
 	/* Execute OpenCL Kernel */
-	
-	
+	// executed using a single work-item
+	// ret = clEnqueueTask(command_queue, kernel, 0, NULL, NULL);
+
+    size_t global_work_size, local_work_size;  
+    // Number of work items in each local work group  
+    local_work_size = 2;  
+    // Number of total work items - localSize must be devisor  
+    global_work_size = (size_t) ceil( len / (int) local_work_size ) * local_work_size;
+
+	//size_t local_work_size[2] = { 8, 8 };
+	//size_t global_work_size[2] = { 1, len };
+	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
+	if (ret != CL_SUCCESS) {
+		printf("Failed to execute kernel for execution.\n");
+		goto error;
+	}
+
+	/* Copy results from the memory buffer */
+	ret = clEnqueueWriteBuffer(command_queue, c_buff, CL_TRUE, 0, len*sizeof(int), (void *)c, 0, NULL, NULL);
+	if (ret != CL_SUCCESS) {
+		printf("Failed to copy data from device to host.\n");
+		goto error;
+	}
 
 	/* Display Result */
 
 	/* Finalization */
 error:
-	ret = clFlush(command_queue);
-	ret = clFinish(command_queue);
-	ret = clReleaseKernel(kernel);
-	ret = clReleaseProgram(program);
-	ret = clReleaseMemObject(memobj);
-	ret = clReleaseCommandQueue(command_queue);
-	ret = clReleaseContext(context);
+	clFlush(command_queue);
+	clFinish(command_queue);
+	clReleaseKernel(kernel);
+	clReleaseProgram(program);
+
+	clReleaseMemObject(memobj);
+	clReleaseMemObject(a_buff);
+	clReleaseMemObject(b_buff);
+	clReleaseMemObject(c_buff);
+
+	clReleaseCommandQueue(command_queue);
+	clReleaseContext(context);
 
 	free(source_str);
+	free(a);
+	free(b);
+	free(c);
 
 	return 0;
 }
