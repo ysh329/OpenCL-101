@@ -102,7 +102,7 @@ int main(void) {
 	/* Load the source code containing the kernel */
 	char string[MEM_SIZE];
 	FILE *fp;
-	char fileName[] = "./vec-add.cl";
+	char fileName[] = "./vec-add-standard.cl";
 	char *source_str;
 	size_t source_size;
 
