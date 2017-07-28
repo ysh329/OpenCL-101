@@ -16,7 +16,7 @@
 #define 	MAX_SOURCE_SIZE 	(0x100000)
 
 void init_vec(int *vec, int len, int set_one_flag) {
-    for (int i = 0; i <= len; i++) {
+    for (int i = 0; i < len; i++) {
 		if (set_one_flag)
 			vec[i] = 1;
 		else
@@ -26,24 +26,33 @@ void init_vec(int *vec, int len, int set_one_flag) {
 
 void rand_vec(int *vec, int len) {
 	srand( (unsigned) time(0) );
-	for (int i = 0; i <= len; i++) {
+	for (int i = 0; i < len; i++) {
 		vec[i] = rand() % 2;
 	}
 }
 
 void add_vec_cpu(const int *a, const int *b, int *res, const int len) {
-	for (int i = 0; i <= len; i++) {
+	for (int i = 0; i < len; i++) {
 		res[i] = a[i] + b[i];
 	}
 }
 
 void print_vec(int *vec, int len) {
-	for (int i = 0; i <= len; i++) {
+	for (int i = 0; i < len; i++) {
 		printf("%d ", vec[i]);
 	}
 	printf("\n");
 }
 
+void check_result(int *v1, int *v2, int len) {
+    int correct_num = 0;
+	for (int i = 0; i < len; i++) {
+		if (v1[i] == v2[i]) {
+			correct_num += 1;
+		}
+	}
+	printf("correct rate: %d / %d , %1.2f\n", correct_num, len, (float)correct_num/len);
+}
 
 int main(void) {
 	struct timeval start, finish;
@@ -51,11 +60,13 @@ int main(void) {
 	srand( (unsigned) time(NULL) );
 
 	/* generate vector a and b */
-	int len = 10;
-	int *a, *b, *c;
+	int len = 64;
+	int *a, *b, *c, *c_d;
 	a = (int *) malloc (len * sizeof(int));
 	b = (int *) malloc (len * sizeof(int));
 	c = (int *) malloc (len * sizeof(int));
+	c_d = (int *) malloc (len * sizeof(int));
+	size_t data_size = len * sizeof(int);
 
 	/* vector addition, cpu version */
 	printf("a: ");
@@ -82,7 +93,6 @@ int main(void) {
 	cl_uint ret_num_devices;
 
 	cl_context context = NULL;
-	cl_mem memobj = NULL;
 	cl_kernel kernel = NULL;
 	cl_program program = NULL;
 
@@ -119,39 +129,38 @@ int main(void) {
 		goto error;
 	}
 	// Context
-	context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+	context = clCreateContext(NULL, 1, &device_id, NULL, NULL, NULL);//&ret);
 	if (ret != CL_SUCCESS) {
 		printf("Failed to create OpenCL context.\n");
 	    goto error;
 	}
-	// Command-queue
 	command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
 	if (ret != CL_SUCCESS) {
-	   printf("Failed to create command queue.\n");
+	   printf("Failed to create command queue %d\n", (int) ret);
 	   goto error;
 	}
 	// Memory Buffer
-	a_buff = clCreateBuffer (context, CL_MEM_READ_ONLY, len, NULL, &ret);
-	b_buff = clCreateBuffer (context, CL_MEM_READ_ONLY, len, NULL, &ret);
-	c_buff = clCreateBuffer (context, CL_MEM_WRITE_ONLY, len, NULL, &ret);
+	a_buff = clCreateBuffer (context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
+	b_buff = clCreateBuffer (context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
+	c_buff = clCreateBuffer (context, CL_MEM_WRITE_ONLY, data_size, NULL, &ret);
 	
-	ret = clEnqueueWriteBuffer (command_queue, a_buff, CL_TRUE, 0, len, (void *) a, 0, NULL, NULL);
-	ret |= clEnqueueWriteBuffer (command_queue, b_buff, CL_TRUE, 0, len, (void *) b, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer (command_queue, a_buff, CL_TRUE, 0, data_size, (void *)a, 0, NULL, NULL);
+	ret |= clEnqueueWriteBuffer (command_queue, b_buff, CL_TRUE, 0, data_size, (void *)b, 0, NULL, NULL);
 	if (ret != CL_SUCCESS) {
-		printf("Failed to copy date from host to device.");
+		printf("Failed to copy date from host to device: %d\n", (int) ret);
 		goto error;
 	}
 	// Create Kernel Program from source
 	 program = clCreateProgramWithSource(context, 1, (const char **)&source_str,
 			(const size_t *)&source_size, &ret);
 	if (ret != CL_SUCCESS) {
-		printf("Failed to create OpenCL program from source.\n");
+		printf("Failed to create OpenCL program from source %d\n", (int) ret);
 		goto error;
 	}
 	// Build Kernel Program
 	ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
 	if (ret != CL_SUCCESS) {
-		printf("Failed to build program.\n");
+		printf("Failed to build program %d\n", (int) ret);
 		char build_log[16348];
 		clGetProgramBuildInfo (program, device_id, CL_PROGRAM_BUILD_LOG, sizeof (build_log), build_log, NULL);
 		printf ("Error in kernel: %s\n", build_log);
@@ -160,16 +169,15 @@ int main(void) {
 	// Create OpenCL Kernel
 	kernel = clCreateKernel(program, "add_vec_gpu", &ret);
 	if (ret != CL_SUCCESS) {
-		printf("Failed to create kernel.\n");
-		goto error;
+		printf("Failed to create kernel %d\n", (int) ret);
+		goto error; 
 	}
-
 	ret  = clSetKernelArg(kernel, 0, sizeof (cl_mem), (void *) &a_buff);
 	ret |= clSetKernelArg(kernel, 1, sizeof (cl_mem), (void *) &b_buff);
 	ret |= clSetKernelArg(kernel, 2, sizeof (cl_mem), (void *) &c_buff);
 	ret |= clSetKernelArg(kernel, 3, sizeof (cl_int), (void *) &len);
 	if (ret != CL_SUCCESS) {
-		printf("Failed to set kernel arguments.\n");
+		printf("Failed to set kernel arguments %d\n", (int) ret);
 		goto error;
 	}
 
@@ -179,26 +187,36 @@ int main(void) {
 
     size_t global_work_size, local_work_size;  
     // Number of work items in each local work group  
-    local_work_size = 2;  
+    local_work_size = len;  
     // Number of total work items - localSize must be devisor  
-    global_work_size = (size_t) ceil( len / (int) local_work_size ) * local_work_size;
+    global_work_size = (size_t) ceil( len / (float) local_work_size ) * local_work_size;
 
 	//size_t local_work_size[2] = { 8, 8 };
 	//size_t global_work_size[2] = { 1, len };
 	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
 	if (ret != CL_SUCCESS) {
-		printf("Failed to execute kernel for execution.\n");
+		printf("Failed to execute kernel for execution %d\n", (int) ret);
 		goto error;
 	}
 
+	init_vec(c_d, len, 0);
 	/* Copy results from the memory buffer */
-	ret = clEnqueueWriteBuffer(command_queue, c_buff, CL_TRUE, 0, len*sizeof(int), (void *)c, 0, NULL, NULL);
+	ret = clEnqueueReadBuffer(command_queue, c_buff, CL_TRUE, 0, data_size, (void *)c_d, 0, NULL, NULL);
 	if (ret != CL_SUCCESS) {
-		printf("Failed to copy data from device to host.\n");
+		printf("Failed to copy data from device to host %d\n", (int) ret);
 		goto error;
 	}
 
 	/* Display Result */
+	printf("c: ");
+	print_vec(c_d, len);
+	check_result(c, c_d, len);
+	printf("len-1=%d, c_d[%d]==c[%d]: %d, c_d[%d]=%d, c[%d]=%d \n", len-1, len-1, len-1, c_d[len-1]==c[len-1], len-1, c_d[len-1], len-1, c[len-1]);
+
+	printf("idx  c  c_d\n");
+	for(int i = 0; i < len; i++) {
+		printf("%2d %2d %2d \n", i, c[i], c_d[i]);
+	}
 
 	/* Finalization */
 error:
@@ -207,7 +225,6 @@ error:
 	clReleaseKernel(kernel);
 	clReleaseProgram(program);
 
-	clReleaseMemObject(memobj);
 	clReleaseMemObject(a_buff);
 	clReleaseMemObject(b_buff);
 	clReleaseMemObject(c_buff);
