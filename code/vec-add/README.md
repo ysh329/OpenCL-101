@@ -7,7 +7,7 @@ gcc -o vec-add vec-add.c -lOpenCL -lm
 ```
 
 
-## Add `-lm` compilation choice
+## Enable `-lm` compilation choice
 
 Because of new verison GCC, which spilt standard library in C99 into two parts (`libc`, `libm`), some math library like `<math.h>` in `libm` need add compilation choice `-lm` (that's link libm) when using, otherwise it will error.
 
