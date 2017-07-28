@@ -3,7 +3,7 @@
 Compilation command:
 
 ```shell
-gcc -o vec-add vec-add.c -lOpenCL -lm
+gcc -o vec-add-standard vec-add-standard.c -lOpenCL -lm
 ```
 
 
