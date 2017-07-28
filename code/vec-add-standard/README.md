@@ -1,4 +1,4 @@
-# vec-add
+# vec-add-standard
 
 Compilation command:
 
