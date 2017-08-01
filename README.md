@@ -1,17 +1,21 @@
 # OpenCL-101
 Learn OpenCL step by step as below.
 
-* ./code/hello-world-from-kernel
-* ./code/tutorial-1.c  
-* ./code/tutorial-2.c  
+1. OpenCL Examples
+2. 
 
-## Installation guide of OpenCL 
+# 1. OpenCL Examples
+
+* ./code/hello-world-from-kernel  
+* ./code/vec-add 
+
+# 2. Installation guide of OpenCL 
 
 You can choose one or two ways to use OpenCL:  
 1. Install OpenCL on Ubuntu 16.04 64-bit  
 2. Using OpenCL by Docker
 
-### Install OpenCL on Ubuntu 16.04 64-bit
+## 2.1 Install OpenCL on Ubuntu 16.04 64-bit
 
 ```Shell
 # below instructions refer linux安装opencl：ubuntu14.04+opencl1.1 - qccz123456的博客 - CSDN博客
@@ -33,7 +37,7 @@ $ sudo apt install ocl-icd-opencl-dev
 $ sudo apt install beignet
 ```
 
-### Using OpenCL by Docker
+## 2.2 Using OpenCL by Docker
 
 Using Docker is convenient, which you don't need config and install enviroments for all about OpenCL. Of course, [install Docker Community Edition](https://docs.docker.com/) first and then search relative images in [DockerHub](https://hub.docker.com/).
 
@@ -46,7 +50,7 @@ chihchun/hashcat-beignet hashcat -b
 
 It will print similar messages as *Verify installation*.
 
-### Verify Installation
+## 2.3 Verify Installation
 
 Using instruction below, successful installation will print same following messages:
 ```shell
