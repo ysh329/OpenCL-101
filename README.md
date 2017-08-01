@@ -5,31 +5,47 @@ Learn OpenCL step by step as below.
 * ./code/tutorial-1.c  
 * ./code/tutorial-2.c  
 
-## Installation OpenCL on Ubuntu16.04 64-bit
+## Installation guide of OpenCL 
+
+### Install OpenCL on Ubuntu 16.04 64-bit
 
 ```Shell
 # below instructions refer linux安装opencl：ubuntu14.04+opencl1.1 - qccz123456的博客 - CSDN博客
 # http://blog.csdn.net/qccz123456/article/details/52606788
 
-sudo apt-get update
-sudo apt-get install build-essential g++ cmake
-sudo apt-get install clang libclang-3.4-dev libclang-dev libclang1
-sudo apt-get install ocl-icd-opencl-dev ocl-icd-libopencl1
-sudo apt-get install opencl-headers ocl-icd-dev ocl-icd-libopencl1
+$ sudo apt-get update
+$ sudo apt-get install build-essential g++ cmake
+$ sudo apt-get install clang libclang-3.4-dev libclang-dev libclang1
+$ sudo apt-get install ocl-icd-opencl-dev ocl-icd-libopencl1
+$ sudo apt-get install opencl-headers ocl-icd-dev ocl-icd-libopencl1
 
 # below instructions refer Ubuntu 16.04.2 下为 Intel 显卡启用 OpenCL_Linux教程_Linux公社-Linux系统门户网站
 # http://www.linuxidc.com/Linux/2017-03/141455.htm
 
-sudo apt install ocl-icd-libopencl1
-sudo apt install opencl-headers
-sudo apt install clinfo
-sudo apt install ocl-icd-opencl-dev
-sudo apt install beignet
+$ sudo apt install ocl-icd-libopencl1
+$ sudo apt install opencl-headers
+$ sudo apt install clinfo
+$ sudo apt install ocl-icd-opencl-dev
+$ sudo apt install beignet
 ```
+
+### Download OpenCL Docker Image
+
+Using Docker is convenient, which you don't need config and install enviroments for all about OpenCL. Of course, [install Docker Community Edition](https://docs.docker.com/) first and then search relative images in [DockerHub](https://hub.docker.com/).
+
+After finish Docker installation, please follow [this instruction from chihchun/opencl-intel](https://hub.docker.com/r/chihchun/opencl-intel/). If anything goes normally, using command below in command line: 
+
+```Shell
+$ docker run -t -i --device /dev/dri:/dev/dri \
+chihchun/hashcat-beignet hashcat -b```
+
+It will print similar messages as *Verify installation*.
+
+### Verify Installation
 
 Using instruction below, successful installation will print same following messages:
 ```shell
-clinfo
+$ clinfo
 
 # print message below
 
