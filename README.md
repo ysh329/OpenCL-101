@@ -2,14 +2,14 @@
 Learn OpenCL step by step as below.
 
 1. OpenCL Examples
-2. 
+2. Installation Guide of OpenCL 
 
 # 1. OpenCL Examples
 
 * ./code/hello-world-from-kernel  
 * ./code/vec-add 
 
-# 2. Installation guide of OpenCL 
+# 2. Installation Guide of OpenCL 
 
 You can choose one or two ways to use OpenCL:  
 1. Install OpenCL on Ubuntu 16.04 64-bit  
