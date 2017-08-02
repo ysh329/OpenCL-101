@@ -220,6 +220,8 @@ int main(void) {
 
 	/* Finalization */
 error:
+
+    /* free device resources */
 	clFlush(command_queue);
 	clFinish(command_queue);
 	clReleaseKernel(kernel);
@@ -232,6 +234,7 @@ error:
 	clReleaseCommandQueue(command_queue);
 	clReleaseContext(context);
 
+    /* free host resources */
 	free(source_str);
 	free(a);
 	free(b);
