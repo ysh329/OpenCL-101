@@ -20,12 +20,9 @@
 #define     VECTOR_LEN          (3)
 
 
-void init_mat(float *mat, int len, int setElemOne) {
+void init_mat(float *mat, int len, float setVal) {
     for (int idx = 0; idx < len; idx++)
-        if (setElemOne)
-            mat[idx] = 1;
-        else
-            mat[idx] = 0;
+		mat[idx] = setVal;
 }
 
 void rand_mat(float *mat, int len, int range) {
@@ -39,12 +36,17 @@ void rand_mat(float *mat, int len, int range) {
 }
 
 void print_mat(float *mat, int width, int height) {
-    for (int c = 0; c < width; c++) {
-        for (int r = 0; r < height; r++)
+	for (int r = 0; r < height; r++) {
+	    for (int c = 0; c < width; c++) 
             printf("%.2f ", mat[c*height+r]);
         printf("\n");
     }
     printf("\n");
+}
+
+void print_vec(float *vec, int len) {
+	for (int idx = 0; idx < len; idx++)
+		printf("%.2f \n", vec[idx]);
 }
 
 void add_mat(float *a, float *b, float *res, int width, int height) {
@@ -89,6 +91,22 @@ int equal_vec(float *a, float *b, int len) {
 	return 1;
 }
 
+void dotprod_mat(float *a, float *b, float *res, int len) {
+	for (int idx; idx < len; idx++)
+		res[idx] = a[idx] * b[idx];
+}
+
+int mult_mat(float *a, float *b, float *res, int M, int N, int K) {
+	int i, j, p;
+	init_mat(res, M*K, 0);
+	for (i = 0; i < M; i++)
+		for (j = 0; j < N; j++) 
+			for (p = 0; p < K; p++) {
+				res[j * M + i] += a[p * M + i] * b[j * K + p];
+				printf("res[%d, %d] %.2f += a[%d, %d] %.2f * b[%d, %d] %.2f \n", i, j, res[j*M+i], i, p, a[p*M+i], p, j, b[j*K+p]);
+			}
+}
+
 
 int main(void) {
 
@@ -109,16 +127,16 @@ int main(void) {
     init_mat(c, 2*3, 0);
     print_mat(c, 2, 3);
 
-    printf("c := a + b, using add_mat \n");
+    printf("[c := a + b] using add_mat \n");
     add_mat(a, b, c, 2, 3);
     print_mat(c, 2, 3);
 
-    printf("c := a + b, using add_vec\n");
+    printf("[c := a + b] using add_vec\n");
     init_mat(c, 2*3, 0);
     add_vec(a, b, c, 2*3);
     print_mat(c, 2, 3);
 
-    printf("c^T:\n");
+    printf("[c^T]\n");
     float *c_t;
 	c_t = (float *) malloc (2 * 3 * sizeof(float));
     transpose_mat(c, 2, 3, c_t);
@@ -130,6 +148,29 @@ int main(void) {
 
 	equal_vec(c, c, 2*3);
 	equal_vec(a, b, 2*3);
+
+	printf("[mult_mat]\n");
+	//float *ma, *mb, *mc;
+	//ma = (float *) malloc (2 * 2 * sizeof(float));
+	//mb = (float *) malloc (2 * 2 * sizeof(float));
+	//mc = (float *) malloc (2 * 2 * sizeof(float));
+
+	float ma[4] = {2, 4, 1, 3};
+	float mb[4] = {1, 1, 2, 0};
+	float mc[4] = {0, 0, 0, 0};
+	init_mat(mc, 2*2, 0);
+
+	printf("ma:\n"); print_mat(ma, 2, 2);
+	printf("mb:\n"); print_mat(mb, 2, 2);
+	printf("mc:\n"); print_mat(mc, 2, 2);
+
+	mult_mat(ma, mb, mc, 2, 2, 2);
+	printf("[mult_mat] mc := ma * mb\n");
+	print_mat(mc, 2, 2);
+
+	printf("[dotprod_mat] mc := ma .* mb\n");
+	dotprod_mat(ma, mb, mc, 2*2);
+	print_mat(mc, 2, 2);
 
     
 
