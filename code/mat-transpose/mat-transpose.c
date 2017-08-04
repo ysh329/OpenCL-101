@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <math.h>
 #include <time.h>
@@ -57,15 +58,26 @@ void add_vec(float *a, float *b, float *res, int len) {
         res[idx] = a[idx] + b[idx];
 }
 
-float* transpose_mat(float *a, int width, int height) {
-    float *res;
-    res = (float *) malloc (width * height * sizeof(float));
-    init_mat(res, width * height, 0);
+void transpose_mat(float *a, int width, int height, float *res) {
     for (int c = 0; c < width; c++)
-        for (int r = 0; r < height; r++)
+        for (int r = 0; r < height; r++) {
             res[r*width + c] = a[c*height + r];
+			//printf("res[%d, %d]:= a[%d, %d] = %.2f \n", r, c, c, r, a[c*height+r]);
+			//printf("res[%d] := a[%d] = %.2f \n\n", r*width + c, c*height + r, a[c*height+r]);
+		}
 }
 
+int equal_mat(float *a, float *b, int width, int height) {
+	for (int c = 0; c < width; c++)
+		for (int r = 0; r < height; r++) {
+			if (a[c*height+r] - b[c*height+r] > 10e-8) {
+				//printf("matrix a is NOT equal to matrix b\n");
+				return 0;
+			}
+		}
+	//printf("matrix a is equal to matrix b\n");
+	return 1;
+}
 
 int main(void) {
 
@@ -97,8 +109,13 @@ int main(void) {
 
     printf("c^T:\n");
     float *c_t;
-    c_t = transpose_mat(c, 2, 3);
+	c_t = (float *) malloc (2 * 3 * sizeof(float));
+    transpose_mat(c, 2, 3, c_t);
+	printf("finished transpose\n");
     print_mat(c_t, 3, 2);
+
+	equal_mat(c, c, 2, 3);
+	equal_mat(a, b, 2, 3);
 
     
 
