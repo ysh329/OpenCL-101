@@ -79,6 +79,17 @@ int equal_mat(float *a, float *b, int width, int height) {
 	return 1;
 }
 
+int equal_vec(float *a, float *b, int len) {
+	for (int idx = 0; idx < len; idx++)
+		if (a[idx] - b[idx] > 10e-8) {
+			//printf("matrix a is NOT equal to matrix b\n");
+			return 0;
+		}
+	//printf("matrix a is equal to matrix b\n");
+	return 1;
+}
+
+
 int main(void) {
 
     float *a, *b, *c;
@@ -116,6 +127,9 @@ int main(void) {
 
 	equal_mat(c, c, 2, 3);
 	equal_mat(a, b, 2, 3);
+
+	equal_vec(c, c, 2*3);
+	equal_vec(a, b, 2*3);
 
     
 
