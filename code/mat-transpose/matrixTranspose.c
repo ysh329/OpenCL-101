@@ -15,11 +15,13 @@
 #define     MEM_SIZE            (128)
 #define     MAX_SOURCE_SIZE     (0x1000000)
 
-#define     MATRIX_WIDTH        (2)
-#define     MATRIX_HEIGHT       (3)
+#define     MATRIX_WIDTH        (3)
+#define     MATRIX_HEIGHT       (5)
 
 #define		PROGRAM_FILE		"matrixTranspose.cl"
 #define 	KERNEL_FUNC			"matrixTranspose"
+
+#define		RUN_NUM				10
 
 
 void init_mat(float *mat, int len, float setVal) {
@@ -38,6 +40,7 @@ void rand_mat(float *mat, int len, int range) {
 }
 
 void print_mat(float *mat, int width, int height) {
+	//return;
 	for (int r = 0; r < height; r++) {
 	    for (int c = 0; c < width; c++) 
             printf("%.2f ", mat[c*height+r]);
@@ -75,21 +78,21 @@ int equal_mat(float *a, float *b, int width, int height) {
 	for (int c = 0; c < width; c++)
 		for (int r = 0; r < height; r++) {
 			if (a[c*height+r] - b[c*height+r] > 10e-8) {
-				//printf("matrix a is NOT equal to matrix b\n");
+				printf("matrix a is NOT equal to matrix b\n");
 				return 0;
 			}
 		}
-	//printf("matrix a is equal to matrix b\n");
+	printf("matrix a is equal to matrix b\n");
 	return 1;
 }
 
 int equal_vec(float *a, float *b, int len) {
 	for (int idx = 0; idx < len; idx++)
 		if (a[idx] - b[idx] > 10e-8) {
-			//printf("matrix a is NOT equal to matrix b\n");
+			printf("matrix a is NOT equal to matrix b\n");
 			return 0;
 		}
-	//printf("matrix a is equal to matrix b\n");
+	printf("~ Bingo ~ matrix a == matrix b\n");
 	return 1;
 }
 
@@ -111,6 +114,9 @@ int mult_mat(float *a, float *b, float *res, int M, int N, int K) {
 
 
 int main(void) {
+
+	struct timeval start, end;
+	double duration;
 
     float 
 		*a, 
@@ -141,11 +147,11 @@ int main(void) {
     rand_mat(a, widthA, heightA);
     print_mat(a, widthA, heightA);
 
-	printf("a^T cpu:\n");
+	printf("a^T_CPU:\n");
 	transpose_mat(a, widthA, heightA, a_T_cpu);
 	print_mat(a_T_cpu, widthAT, heightAT);
 
-	printf("set a^T_GPU all zero\n");
+	printf("set a^T_GPU all zero:\n");
 	init_mat(a_T_gpu,  widthAT * heightAT, 0);
 	print_mat(a_T_gpu, widthAT, heightAT);
 
@@ -164,6 +170,7 @@ int main(void) {
 	cl_program program = NULL;	
 
 	cl_command_queue command_queue = NULL;
+	cl_event event = NULL;
 	cl_int ret;
 
 	/* Load the source code and containing the kernel */
@@ -214,7 +221,7 @@ int main(void) {
     a_buff   = clCreateBuffer (context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
 	a_T_buff = clCreateBuffer (context, CL_MEM_WRITE_ONLY, data_size, NULL, &ret);
 
-    ret  = clEnqueueWriteBuffer (command_queue, a_buff,   CL_TRUE, 0, data_size, (void *)a,   0, NULL, NULL);
+    ret  = clEnqueueWriteBuffer (command_queue, a_buff,   CL_TRUE, 0, data_size, (void *)a,       0, NULL, NULL);
 	ret |= clEnqueueWriteBuffer (command_queue, a_T_buff, CL_TRUE, 0, data_size, (void *)a_T_gpu, 0, NULL, NULL);
     if (ret != CL_SUCCESS) {
         printf("failed to copy data from host to device.\n");
@@ -255,17 +262,32 @@ int main(void) {
 		goto error;
 	}
 
-	// Execute OpenCL Kernel
 	size_t global_work_size, local_work_size;
-	// Number of work items in each local work-group
-	local_work_size = len;
-	// Number of total work-items - localSize must be devisor
-	global_work_size = (size_t)	 ceil( len / (float) local_work_size ) * local_work_size;
-	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
-	if (ret != CL_SUCCESS) {
-		printf("failed to execute kernel for execution %d\n", (int) ret);
-		goto error;
+	local_work_size = len; // Number of work items in each local work-group
+	global_work_size = (size_t) ceil( len / (float) local_work_size ) * local_work_size; // Number of total work-items - localSize must be devisor
+	
+	/*
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
+    if (ret != CL_SUCCESS) {
+        printf("failed to execute kernel for execution %d\n", (int) ret);
+        goto error;
+    }
+	*/
+
+	// Start the timed loop
+	printf(">>> Starting %d %s runs ...\n", RUN_NUM, KERNEL_FUNC);
+	gettimeofday(&start, NULL);
+	for (int ridx = 0; ridx < RUN_NUM; ridx++) {
+		// Run kernel
+		clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0, NULL, &event);
+		clWaitForEvents(1, &event);
 	}
+	gettimeofday(&end, NULL);
+    duration = ((double)(end.tv_sec-start.tv_sec)*1000000 + 
+        (double)(end.tv_usec-start.tv_usec)) / 1000000 / (double) RUN_NUM;
+    double gflops = 1.0 * heightA * widthA;//2.0 * M * N * N;
+    gflops = gflops / duration * 1.0e-6;
+    printf("%s \n %d x %d\t%lf s\t%lf MFLOPS\n\n", KERNEL_FUNC, widthA, heightA, duration, gflops);
 
 	
 	// Copy the output matrix ( transposed matrix a_T_gpu ) result from the GPU memory ( a_T_buff )
