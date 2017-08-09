@@ -15,8 +15,10 @@
 #define     MEM_SIZE            (128)
 #define     MAX_SOURCE_SIZE     (0x1000000)
 
-#define     MATRIX_WIDTH        (3)
-#define     MATRIX_HEIGHT       (5)
+#define 	ELEM_RANGE			100
+#define     MATRIX_WIDTH        (500)
+#define     MATRIX_HEIGHT       (300)
+#define 	PRINT_FLAG			return
 
 #define		PROGRAM_FILE		"matrixTranspose.cl"
 #define 	KERNEL_FUNC			"matrixTranspose"
@@ -40,7 +42,7 @@ void rand_mat(float *mat, int len, int range) {
 }
 
 void print_mat(float *mat, int width, int height) {
-	//return;
+	PRINT_FLAG;
 	for (int r = 0; r < height; r++) {
 	    for (int c = 0; c < width; c++) 
             printf("%.2f ", mat[c*height+r]);
@@ -144,7 +146,7 @@ int main(void) {
 	a_T_gpu = (float *) malloc (data_size);
 
     printf("a:\n");
-    rand_mat(a, widthA, heightA);
+    rand_mat(a, widthA*heightA, ELEM_RANGE);
     print_mat(a, widthA, heightA);
 
 	printf("a^T_CPU:\n");
@@ -302,7 +304,8 @@ int main(void) {
 	print_mat(a_T_gpu, widthAT, heightAT);
 
 	// Check result
-	equal_mat(a_T_cpu, a_T_gpu, widthAT, heightAT);
+	//equal_mat(a_T_cpu, a_T_gpu, widthAT, heightAT);
+	equal_vec(a_T_cpu, a_T_gpu, widthAT*heightAT);
 	
 error:
 	clFlush(command_queue);
