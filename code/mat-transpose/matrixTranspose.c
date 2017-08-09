@@ -218,6 +218,43 @@ int main(void) {
 		printf("failed to get device id.\n");
 		goto error;
 	}
+
+    // Context
+    context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+    if (ret != CL_SUCCESS) {
+        printf("failed to create OpenCL context.\n");
+        goto error;
+    }
+    command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+    if (ret != CL_SUCCESS) {
+        printf("failed to create command queue.\n");
+        goto error;
+    }
+    // Memory Buffer
+    a_buff = clCreateBuffer (context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
+    b_buff = clCreateBuffer (context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
+    c_buff = clCreateBuffer (context, CL_MEM_WRITE_ONLY, data_size, NULL, &ret);
+
+    ret = clEnqueueWriteBuffer (command_queue, a_buff, CL_TURE, 0, data_size, (void *)a, 0, NULL, NULL);
+    ret |= clEnqueueWriteBuffer (command_queue, b_buff, CL_TRUE, 0, data_size, (void *)b, 0, NULL, NULL);
+    if (ret != CL_SUCCESS) {
+        printf("failed to copy data from host to device.\n");
+        goto error;
+    }
+
+    // Create Kernel Program from source
+    program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret);
+    if (ret != CL_SUCCESS) {
+        printf("failed to create OpenCL program from source %d\n", (int)ret);
+        goto error;
+    }
+
+    // Build Kernel Program
+    ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+    if (ret != CL_SUCCESS) {
+
+    }
+    
 	
 
 
