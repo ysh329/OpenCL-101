@@ -12,16 +12,15 @@
 #include <CL/cl.h>
 #endif
 
-#define     MEM_SIZE            (128)
-#define     MAX_SOURCE_SIZE     (0x1000000)
-
 #define 	ELEM_RANGE			100
-#define     MATRIX_WIDTH        (500)
-#define     MATRIX_HEIGHT       (300)
-#define 	PRINT_FLAG			return
+#define     MATRIX_WIDTH        (1024*2)
+#define     MATRIX_HEIGHT       (1024*2)
 
-#define		PROGRAM_FILE		"matrixTranspose.cl"
+#define 	NOT_PRINT_FLAG			
+
+#define		PROGRAM_FILE		"matrixTranspose_v2.cl"
 #define 	KERNEL_FUNC			"matrixTranspose"
+#define 	NDIM				2
 
 #define		RUN_NUM				10
 
@@ -42,7 +41,9 @@ void rand_mat(float *mat, int len, int range) {
 }
 
 void print_mat(float *mat, int width, int height) {
-	PRINT_FLAG;
+#ifdef NOT_PRINT_FLAG
+	return;
+#endif
 	for (int r = 0; r < height; r++) {
 	    for (int c = 0; c < width; c++) 
             printf("%.2f ", mat[c*height+r]);
@@ -62,6 +63,13 @@ void add_mat(float *a, float *b, float *res, int width, int height) {
             res[c*height + r] = a[c*height + r] + b[c*height + r];
 }
 
+float max(float a, float b) {
+	if (a > b)
+		return a;
+	else
+		return b;
+}
+
 void add_vec(float *a, float *b, float *res, int len) {
     for (int idx = 0; idx < len; idx++) 
         res[idx] = a[idx] + b[idx];
@@ -77,24 +85,33 @@ void transpose_mat(float *a, int width, int height, float *res) {
 }
 
 int equal_mat(float *a, float *b, int width, int height) {
+	int correct_num = 0;
 	for (int c = 0; c < width; c++)
-		for (int r = 0; r < height; r++) {
-			if (a[c*height+r] - b[c*height+r] > 10e-8) {
-				printf("matrix a is NOT equal to matrix b\n");
-				return 0;
-			}
-		}
-	printf("matrix a is equal to matrix b\n");
+		for (int r = 0; r < height; r++) 
+			if (a[c*height+r] - b[c*height+r] < 10e-8) 
+				correct_num += 1;
+
+	float correct_rate = (float) correct_num / ( width * height );
+	printf(">>> correct rate: %.4f\n", correct_rate);
+	if (1.0 - correct_rate < 10e-6)
+		printf(">>> ~ Bingo ~ matrix a == matrix b\n");
+	else
+		printf(">>> matrix a is equal to matrix b\n");
 	return 1;
 }
 
 int equal_vec(float *a, float *b, int len) {
-	for (int idx = 0; idx < len; idx++)
-		if (a[idx] - b[idx] > 10e-8) {
-			printf("matrix a is NOT equal to matrix b\n");
-			return 0;
-		}
-	printf("~ Bingo ~ matrix a == matrix b\n");
+	int correct_num = 0;
+	for (int idx = 0; idx < len; idx++) 
+		if (a[idx] - b[idx] < 10e-8) 
+			correct_num += 1;
+
+	float correct_rate = (float) correct_num / len;
+	printf(">>> correct rate: %.4f\n", correct_rate);
+	if (1.0 - correct_rate < 10e-8)
+		printf(">>> ~ Bingo ~ matrix a == matrix b\n");
+	else
+		printf(">>> matrix a is NOT equal to matrix b\n");
 	return 1;
 }
 
@@ -176,7 +193,6 @@ int main(void) {
 	cl_int ret;
 
 	/* Load the source code and containing the kernel */
-	char string[MEM_SIZE];
 	FILE *fp, *program_handle;
 	char *program_buffer;
 	size_t program_size;
@@ -264,9 +280,11 @@ int main(void) {
 		goto error;
 	}
 
-	size_t global_work_size, local_work_size;
-	local_work_size = len; // Number of work items in each local work-group
-	global_work_size = (size_t) ceil( len / (float) local_work_size ) * local_work_size; // Number of total work-items - localSize must be devisor
+	//size_t global_work_size, local_work_size;
+	//local_work_size = len; // Number of work items in each local work-group
+	// Number of total work-items - localSize must be devisor
+	size_t global_work_size[2] = { max(widthA, heightA), max(widthA, heightA)};
+	//size_t global_work_size = (size_t) max(widthA, heightA);
 	
 	/*
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
@@ -281,15 +299,17 @@ int main(void) {
 	gettimeofday(&start, NULL);
 	for (int ridx = 0; ridx < RUN_NUM; ridx++) {
 		// Run kernel
-		clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0, NULL, &event);
+		clEnqueueNDRangeKernel(command_queue, kernel, NDIM, NULL, global_work_size,//&global_work_size,
+															   NULL,// &local_work_size,
+															   0, NULL, &event);
 		clWaitForEvents(1, &event);
 	}
 	gettimeofday(&end, NULL);
     duration = ((double)(end.tv_sec-start.tv_sec)*1000000 + 
         (double)(end.tv_usec-start.tv_usec)) / 1000000 / (double) RUN_NUM;
-    double gflops = 1.0 * heightA * widthA;//2.0 * M * N * N;
+    double gflops = 1.0 * heightA * widthA;
     gflops = gflops / duration * 1.0e-6;
-    printf("%s \n %d x %d\t%lf s\t%lf MFLOPS\n\n", KERNEL_FUNC, widthA, heightA, duration, gflops);
+    printf("%s.%s \n %d x %d\t%lf s\t%lf MFLOPS\n\n", PROGRAM_FILE, KERNEL_FUNC, widthA, heightA, duration, gflops);
 
 	
 	// Copy the output matrix ( transposed matrix a_T_gpu ) result from the GPU memory ( a_T_buff )
