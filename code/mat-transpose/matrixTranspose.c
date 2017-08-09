@@ -17,7 +17,9 @@
 
 #define     MATRIX_WIDTH        (2)
 #define     MATRIX_HEIGHT       (3)
-#define     VECTOR_LEN          (3)
+
+#define		PROGRAM_FILE		"matrixTranspose.cl"
+#define 	KERNEL_FUNC			"matrixTranspose"
 
 
 void init_mat(float *mat, int len, float setVal) {
@@ -110,72 +112,46 @@ int mult_mat(float *a, float *b, float *res, int M, int N, int K) {
 
 int main(void) {
 
-    float *a, *b, *c;
-    a = (float *) malloc (2 * 3 * sizeof(float));
-    b = (float *) malloc (2 * 3 * sizeof(float));
-    c = (float *) malloc (2 * 3 * sizeof(float));
+    float 
+		*a, 
+		*a_T_cpu, 
+		*a_T_gpu;
+
+	int 
+		heightA,  widthA,
+		heightAT, widthAT,
+		len;
+
+	size_t 
+		data_size;
+
+	heightA = MATRIX_HEIGHT, 
+	widthA = MATRIX_WIDTH,
+	len = MATRIX_HEIGHT * MATRIX_WIDTH;
+
+	heightAT = widthA;
+	widthAT = heightA;	
+ 
+	data_size = heightA * widthA * sizeof(float);
+    a       = (float *) malloc (data_size);
+	a_T_cpu = (float *) malloc (data_size);
+	a_T_gpu = (float *) malloc (data_size);
 
     printf("a:\n");
-    rand_mat(a, 2, 2);
-    print_mat(a, 2, 3);
+    rand_mat(a, widthA, heightA);
+    print_mat(a, widthA, heightA);
 
-    printf("b:\n");
-    rand_mat(b, 2, 3);
-    print_mat(b, 2, 3);
+	printf("a^T cpu:\n");
+	transpose_mat(a, widthA, heightA, a_T_cpu);
+	print_mat(a_T_cpu, widthAT, heightAT);
 
-    printf("c:\n");
-    init_mat(c, 2*3, 0);
-    print_mat(c, 2, 3);
-
-    printf("[c := a + b] using add_mat \n");
-    add_mat(a, b, c, 2, 3);
-    print_mat(c, 2, 3);
-
-    printf("[c := a + b] using add_vec\n");
-    init_mat(c, 2*3, 0);
-    add_vec(a, b, c, 2*3);
-    print_mat(c, 2, 3);
-
-    printf("[c^T]\n");
-    float *c_t;
-	c_t = (float *) malloc (2 * 3 * sizeof(float));
-    transpose_mat(c, 2, 3, c_t);
-	printf("finished transpose\n");
-    print_mat(c_t, 3, 2);
-
-	equal_mat(c, c, 2, 3);
-	equal_mat(a, b, 2, 3);
-
-	equal_vec(c, c, 2*3);
-	equal_vec(a, b, 2*3);
-
-	printf("[mult_mat]\n");
-	//float *ma, *mb, *mc;
-	//ma = (float *) malloc (2 * 2 * sizeof(float));
-	//mb = (float *) malloc (2 * 2 * sizeof(float));
-	//mc = (float *) malloc (2 * 2 * sizeof(float));
-
-	float ma[4] = {2, 4, 1, 3};
-	float mb[4] = {1, 1, 2, 0};
-	float mc[4] = {0, 0, 0, 0};
-	init_mat(mc, 2*2, 0);
-
-	printf("ma:\n"); print_mat(ma, 2, 2);
-	printf("mb:\n"); print_mat(mb, 2, 2);
-	printf("mc:\n"); print_mat(mc, 2, 2);
-
-	mult_mat(ma, mb, mc, 2, 2, 2);
-	printf("[mult_mat] mc := ma * mb\n");
-	print_mat(mc, 2, 2);
-
-	printf("[dotprod_mat] mc := ma .* mb\n");
-	dotprod_mat(ma, mb, mc, 2*2);
-	print_mat(mc, 2, 2);
-
+	printf("set a^T_GPU all zero\n");
+	init_mat(a_T_gpu,  widthAT * heightAT, 0);
+	print_mat(a_T_gpu, widthAT, heightAT);
 
 	/* GPU */
-	cl_mem a_buff, b_buff, c_buff;
-	a_buff = b_buff = c_buff = NULL;
+	cl_mem a_buff, a_T_buff;
+	a_buff = a_T_buff = NULL;
 
 	cl_platform_id platform_id = NULL;
 	cl_uint ret_num_platforms;
@@ -192,21 +168,25 @@ int main(void) {
 
 	/* Load the source code and containing the kernel */
 	char string[MEM_SIZE];
-	FILE *fp;
-	char fileName[] = "./matrixTranspose.cl";
-	char *source_str;
-	size_t source_size;
+	FILE *fp, *program_handle;
+	char *program_buffer;
+	size_t program_size;
 
-	fp = fopen(fileName, "r");
-	if (!fp) {
+	program_handle = fopen(PROGRAM_FILE, "r");
+	if (program_handle == NULL) {
 		fprintf(stderr, "failed to load kernel.\n");
+		exit(1);
 	}
-	source_str = (char*) malloc (MAX_SOURCE_SIZE);
-	source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
-	fclose(fp);
+	fseek(program_handle, 0, SEEK_END);
+	program_size = ftell(program_handle);
+	rewind(program_handle);
+	program_buffer = (char *)malloc(program_size + 1);
+	program_buffer[program_size] = '\0';
+	fread(program_buffer, sizeof(char), program_size, program_handle);
+	fclose(program_handle);
 
 	// Platform
-	ret = clGetPlatform(1, &platform_id, &ret_num_platform);	
+	ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);	
 	if (ret != CL_SUCCESS) {
 		printf("failed to get platform ID.\n");
 		goto error;
@@ -231,19 +211,19 @@ int main(void) {
         goto error;
     }
     // Memory Buffer
-    a_buff = clCreateBuffer (context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
-    b_buff = clCreateBuffer (context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
-    c_buff = clCreateBuffer (context, CL_MEM_WRITE_ONLY, data_size, NULL, &ret);
+    a_buff   = clCreateBuffer (context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
+	a_T_buff = clCreateBuffer (context, CL_MEM_WRITE_ONLY, data_size, NULL, &ret);
 
-    ret = clEnqueueWriteBuffer (command_queue, a_buff, CL_TURE, 0, data_size, (void *)a, 0, NULL, NULL);
-    ret |= clEnqueueWriteBuffer (command_queue, b_buff, CL_TRUE, 0, data_size, (void *)b, 0, NULL, NULL);
+    ret  = clEnqueueWriteBuffer (command_queue, a_buff,   CL_TRUE, 0, data_size, (void *)a,   0, NULL, NULL);
+	ret |= clEnqueueWriteBuffer (command_queue, a_T_buff, CL_TRUE, 0, data_size, (void *)a_T_gpu, 0, NULL, NULL);
     if (ret != CL_SUCCESS) {
         printf("failed to copy data from host to device.\n");
         goto error;
     }
 
     // Create Kernel Program from source
-    program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret);
+    program = clCreateProgramWithSource(context, 1, (const char **)&program_buffer,
+				(const size_t *)&program_size, &ret);
     if (ret != CL_SUCCESS) {
         printf("failed to create OpenCL program from source %d\n", (int)ret);
         goto error;
@@ -252,19 +232,79 @@ int main(void) {
     // Build Kernel Program
     ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
     if (ret != CL_SUCCESS) {
-
+		printf("failed to build program %d\n", (int) ret);
+		char build_log[16348];
+		clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(build_log), build_log, NULL);
+		printf("Error in kernel: %s\n", build_log);
+		goto error;
     }
-    
+		
+	// Create OpenCL kernel
+	kernel = clCreateKernel(program, KERNEL_FUNC, &ret);
+	if (ret != CL_SUCCESS) {
+		printf("failed to create kernel %d\n", (int) ret);	
+		goto error;
+	}
+
+	ret  = clSetKernelArg(kernel, 0, sizeof(cl_int), (void *) &heightA);
+	ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), (void *) &widthA);
+	ret |= clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *) &a_buff);
+	ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *) &a_T_buff);
+    if (ret != CL_SUCCESS) {
+		printf("failed to set kernel arguments %d\n", (int) ret);
+		goto error;
+	}
+
+	// Execute OpenCL Kernel
+	size_t global_work_size, local_work_size;
+	// Number of work items in each local work-group
+	local_work_size = len;
+	// Number of total work-items - localSize must be devisor
+	global_work_size = (size_t)	 ceil( len / (float) local_work_size ) * local_work_size;
+	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
+	if (ret != CL_SUCCESS) {
+		printf("failed to execute kernel for execution %d\n", (int) ret);
+		goto error;
+	}
+
 	
+	// Copy the output matrix ( transposed matrix a_T_gpu ) result from the GPU memory ( a_T_buff )
+	ret = clEnqueueReadBuffer(command_queue, a_T_buff, CL_TRUE, 0, data_size, (void *)a_T_gpu, 0, NULL, NULL);
+	if (ret != CL_SUCCESS) {
+		printf("failed to copy data from device to host %d\n", (int) ret);
+		goto error;
+	}
 
+	// Display result
+	printf("a^T_GPU:\n");
+	print_mat(a_T_gpu, widthAT, heightAT);
 
-
+	// Check result
+	equal_mat(a_T_cpu, a_T_gpu, widthAT, heightAT);
+	
 error:
-	;
-	
+	clFlush(command_queue);
+	clFinish(command_queue);
+	clReleaseKernel(kernel);
+	clReleaseProgram(program);
 
+	// Free the OpenCL memory objects
+	clReleaseMemObject(a_buff);
+	clReleaseMemObject(a_T_buff);
 
+	// Clean-up OpenCL
+	clReleaseCommandQueue(command_queue);
+	clReleaseContext(context);
+	clReleaseProgram(program);
+    clReleaseKernel(kernel);
 
-    return 1;
+	// Free the host memory objects
+	free(program_buffer);
+	free(a);
+	free(a_T_cpu);
+	free(a_T_gpu);
+
+	// Exit
+    return 0;
 }
 
