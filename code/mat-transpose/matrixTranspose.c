@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <math.h>
 #include <time.h>
@@ -12,10 +13,10 @@
 #include <CL/cl.h>
 #endif
 
-#define 	ELEM_RAND_RANGE		(100)
-#define     MATRIX_WIDTH        (256)
+#define 	ELEM_RAND_RANGE		(500)
+#define     MATRIX_WIDTH        (2048)
 #define     MATRIX_HEIGHT       (MATRIX_WIDTH)
-#define 	NDIM				(3)
+#define 	NDIM				(1)
 #define 	RUN_NUM				(100)
 
 #define 	NOT_PRINT_FLAG
@@ -42,118 +43,12 @@
 
 #define     LOCAL_WORK_SIZE_P		NULL
 
+#include "matop.h"
 
-void init_mat(float *mat, int len, float setVal) {
-    for (int idx = 0; idx < len; idx++)
-		mat[idx] = setVal;
-}
-
-void rand_mat(float *mat, int len, int range) {
-    if (range < 1) {
-        printf("range value can't be less than 1.\n");
-        exit(-1);
-    }
-    srand( (unsigned) time(0) );
-    for (int idx = 0; idx < len; idx++)
-        mat[idx] = rand() % range;
-}
-
-void print_mat(float *mat, int width, int height) {
-#ifdef NOT_PRINT_FLAG
-	return;
-#endif
-	for (int r = 0; r < height; r++) {
-	    for (int c = 0; c < width; c++) 
-            printf("%.2f ", mat[c*height+r]);
-        printf("\n");
-    }
-    printf("\n");
-}
-
-void print_vec(float *vec, int len) {
-	for (int idx = 0; idx < len; idx++)
-		printf("%.2f \n", vec[idx]);
-}
-
-void add_mat(float *a, float *b, float *res, int width, int height) {
-    for (int c = 0; c < width; c++)
-        for (int r = 0; r < height; r++)
-            res[c*height + r] = a[c*height + r] + b[c*height + r];
-}
-
-float max(float a, float b) {
-	if (a > b)
-		return a;
-	else
-		return b;
-}
-
-void add_vec(float *a, float *b, float *res, int len) {
-    for (int idx = 0; idx < len; idx++) 
-        res[idx] = a[idx] + b[idx];
-}
-
-void transpose_mat(float *a, int width, int height, float *res) {
-    for (int c = 0; c < width; c++)
-        for (int r = 0; r < height; r++) {
-            res[r*width + c] = a[c*height + r];
-			//printf("res[%d, %d]:= a[%d, %d] = %.2f \n", r, c, c, r, a[c*height+r]);
-			//printf("res[%d] := a[%d] = %.2f \n\n", r*width + c, c*height + r, a[c*height+r]);
-		}
-}
-
-int equal_mat(float *a, float *b, int width, int height) {
-	int correct_num = 0;
-	for (int c = 0; c < width; c++)
-		for (int r = 0; r < height; r++) 
-			if (a[c*height+r] - b[c*height+r] < 10e-8) 
-				correct_num += 1;
-
-	float correct_rate = (float) correct_num / ( width * height );
-	printf(">>> correct rate: %.4f\n", correct_rate);
-	if (1.0 - correct_rate < 10e-6)
-		printf(">>> ~ Bingo ~ matrix a == matrix b\n");
-	else
-		printf(">>> matrix a is equal to matrix b\n");
-	return 1;
-}
-
-int equal_vec(float *a, float *b, int len) {
-	int correct_num = 0;
-	for (int idx = 0; idx < len; idx++) 
-		if (a[idx] - b[idx] < 10e-8) 
-			correct_num += 1;
-
-	float correct_rate = (float) correct_num / len;
-	printf(">>> correct rate: %.4f\n", correct_rate);
-	if (1.0 - correct_rate < 10e-8)
-		printf(">>> ~ Bingo ~ matrix a == matrix b\n");
-	else
-		printf(">>> matrix a is NOT equal to matrix b\n");
-	return 1;
-}
-
-void dotprod_mat(float *a, float *b, float *res, int len) {
-	for (int idx; idx < len; idx++)
-		res[idx] = a[idx] * b[idx];
-}
-
-int mult_mat(float *a, float *b, float *res, int M, int N, int K) {
-	int i, j, p;
-	init_mat(res, M*K, 0);
-	for (i = 0; i < M; i++)
-		for (j = 0; j < N; j++) 
-			for (p = 0; p < K; p++) {
-				res[j * M + i] += a[p * M + i] * b[j * K + p];
-				printf("res[%d, %d] %.2f += a[%d, %d] %.2f * b[%d, %d] %.2f \n", i, j, res[j*M+i], i, p, a[p*M+i], p, j, b[j*K+p]);
-			}
-}
-
-
-int main(void) {
+int main(int argc, char * argv[]) {
 
 	struct timeval start, end;
-	double duration;
+	double duration, gflops;
 
     float 
 		*a, 
@@ -168,10 +63,28 @@ int main(void) {
 	size_t 
 		data_size;
 
-	heightA = MATRIX_HEIGHT, 
-	widthA = MATRIX_WIDTH,
-	len = MATRIX_HEIGHT * MATRIX_WIDTH;
+	char
+		program_file[] = PROGRAM_FILE;
 
+	if (argc == 2) {
+		heightA = atoi( argv[1] );
+		widthA = heightA;
+	}
+	else if (argc == 3) {
+		heightA = atoi( argv[1] );
+		widthA = atoi( argv[2] );
+	}
+	else if (argc == 4) {
+		heightA = atoi( argv[1] );
+		widthA = atoi( argv[2] );
+		strcpy( program_file, argv[3] );
+	}
+	else {
+		heightA = MATRIX_HEIGHT; 
+		widthA = MATRIX_WIDTH;
+	}
+
+	len = heightA * widthA;
 	heightAT = widthA;
 	widthAT = heightA;	
  
@@ -180,17 +93,37 @@ int main(void) {
 	a_T_cpu = (float *) malloc (data_size);
 	a_T_gpu = (float *) malloc (data_size);
 
+#ifndef NOT_PRINT_FLAG
     printf("a:\n");
+#endif
+
     rand_mat(a, widthA*heightA, ELEM_RAND_RANGE);
+
+#ifndef NOT_PRINT_FLAG
     print_mat(a, widthA, heightA);
-
 	printf("a^T_CPU:\n");
-	transpose_mat(a, widthA, heightA, a_T_cpu);
-	print_mat(a_T_cpu, widthAT, heightAT);
+#endif
 
+	gettimeofday(&start, NULL);
+	for (int ridx = 0; ridx < RUN_NUM; ridx++)
+		transpose_mat(a, widthA, heightA, a_T_cpu);
+    gettimeofday(&end, NULL);
+    duration = ((double)(end.tv_sec-start.tv_sec)*1000000 + 
+        (double)(end.tv_usec-start.tv_usec)) / 1000000 / (double) RUN_NUM;
+    gflops = 1.0 * heightA * widthA;
+    gflops = gflops / duration * 1.0e-6;
+    printf("CPU \t\t\t%d x %d\t%lf s\t%lf MFLOPS\n\n", widthA, heightA, duration, gflops);
+
+#ifndef NOT_PRINT_FLAG
+	print_mat(a_T_cpu, widthAT, heightAT);
 	printf("set a^T_GPU all zero:\n");
+#endif
+
 	init_mat(a_T_gpu,  widthAT * heightAT, 0);
+
+#ifndef NOT_PRINT_FLAG
 	print_mat(a_T_gpu, widthAT, heightAT);
+#endif
 
 	/* GPU */
 	cl_mem a_buff, a_T_buff;
@@ -215,7 +148,7 @@ int main(void) {
 	char *program_buffer;
 	size_t program_size;
 
-	program_handle = fopen(PROGRAM_FILE, "r");
+	program_handle = fopen(program_file, "r");
 	if (program_handle == NULL) {
 		fprintf(stderr, "failed to load kernel.\n");
 		exit(1);
@@ -324,9 +257,9 @@ int main(void) {
 	gettimeofday(&end, NULL);
     duration = ((double)(end.tv_sec-start.tv_sec)*1000000 + 
         (double)(end.tv_usec-start.tv_usec)) / 1000000 / (double) RUN_NUM;
-    double gflops = 1.0 * heightA * widthA;
+    gflops = 1.0 * heightA * widthA;
     gflops = gflops / duration * 1.0e-6;
-    printf("%s.%s \n %d x %d\t%lf s\t%lf MFLOPS\n\n", PROGRAM_FILE, KERNEL_FUNC, widthA, heightA, duration, gflops);
+    printf("GPU %s %d x %d\t%lf s\t%lf MFLOPS\n\n", program_file, widthA, heightA, duration, gflops);
 
 	
 	// Copy the output matrix ( transposed matrix a_T_gpu ) result from the GPU memory ( a_T_buff )
@@ -337,8 +270,10 @@ int main(void) {
 	}
 
 	// Display result
+#ifndef NOT_PRINT_FLAG
 	printf("a^T_GPU:\n");
 	print_mat(a_T_gpu, widthAT, heightAT);
+#endif
 
 	// Check result
 	//equal_mat(a_T_cpu, a_T_gpu, widthAT, heightAT);
