@@ -12,10 +12,10 @@
 #include <CL/cl.h>
 #endif
 
-#define 	ELEM_RAND_RANGE		100
-#define     MATRIX_WIDTH        (2048)
-#define     MATRIX_HEIGHT       (2048)
-#define 	NDIM				(1)
+#define 	ELEM_RAND_RANGE		(100)
+#define     MATRIX_WIDTH        (256)
+#define     MATRIX_HEIGHT       (MATRIX_WIDTH)
+#define 	NDIM				(3)
 #define 	RUN_NUM				(100)
 
 #define 	NOT_PRINT_FLAG
@@ -39,6 +39,8 @@
 	#define		GLOBAL_WORK_SIZE_P		global_work_size
 #else
 #endif
+
+#define     LOCAL_WORK_SIZE_P		NULL
 
 
 void init_mat(float *mat, int len, float setVal) {
@@ -296,10 +298,8 @@ int main(void) {
 		goto error;
 	}
 
-	//size_t global_work_size, local_work_size;
-	//local_work_size = len; // Number of work items in each local work-group
-	// Number of total work-items - localSize must be devisor
-	//size_t global_work_size = (size_t) max(widthA, heightA);
+	// local_work_size: Number of work items in each local work-group
+	// global_work_size: Number of total work-items - localSize must be devisor
 	SET_GLOBAL_WORK_SIZE
 	PRINT_GLOBAL_WORK_SIZE
 	
@@ -317,7 +317,7 @@ int main(void) {
 	for (int ridx = 0; ridx < RUN_NUM; ridx++) {
 		// Run kernel
 		clEnqueueNDRangeKernel(command_queue, kernel, NDIM, NULL, GLOBAL_WORK_SIZE_P,//&global_work_size,
-															   NULL,// &local_work_size,
+															   LOCAL_WORK_SIZE_P,//&local_work_size,
 															   0, NULL, &event);
 		clWaitForEvents(1, &event);
 	}
