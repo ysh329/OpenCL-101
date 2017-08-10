@@ -12,17 +12,33 @@
 #include <CL/cl.h>
 #endif
 
-#define 	ELEM_RANGE			100
-#define     MATRIX_WIDTH        (1024*2)
-#define     MATRIX_HEIGHT       (1024*2)
+#define 	ELEM_RAND_RANGE		100
+#define     MATRIX_WIDTH        (2048)
+#define     MATRIX_HEIGHT       (2048)
+#define 	NDIM				(1)
+#define 	RUN_NUM				(100)
 
-#define 	NOT_PRINT_FLAG			
+#define 	NOT_PRINT_FLAG
 
-#define		PROGRAM_FILE		"matrixTranspose_v2.cl"
 #define 	KERNEL_FUNC			"matrixTranspose"
-#define 	NDIM				2
 
-#define		RUN_NUM				10
+#if (NDIM == 1)
+	#define 	PROGRAM_FILE			"matrixTranspose_v1.cl"
+	#define 	SET_GLOBAL_WORK_SIZE	size_t global_work_size = MATRIX_WIDTH;
+	#define 	PRINT_GLOBAL_WORK_SIZE	printf(">>> global_work_size: %d\n", (int)global_work_size);
+	#define 	GLOBAL_WORK_SIZE_P		&global_work_size
+#elif (NDIM == 2)
+	#define		PROGRAM_FILE			"matrixTranspose_v2.cl"
+	#define 	SET_GLOBAL_WORK_SIZE    size_t global_work_size[NDIM] = {MATRIX_WIDTH, MATRIX_HEIGHT};
+	#define 	PRINT_GLOBAL_WORK_SIZE	printf(">>> global_work_size[%d]: (%d, %d)\n", NDIM, (int)global_work_size[0], (int)global_work_size[1]);
+	#define 	GLOBAL_WORK_SIZE_P		global_work_size
+#elif (NDIM == 3)
+	#define 	PROGRAM_FILE 			"matrixTranspose_v2.cl"
+	#define 	SET_GLOBAL_WORK_SIZE	size_t global_work_size[NDIM] = {MATRIX_WIDTH, MATRIX_HEIGHT,1};
+	#define 	PRINT_GLOBAL_WORK_SIZE	printf(">>> global_work_size[%d]: (%d, %d, %d)\n", NDIM, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
+	#define		GLOBAL_WORK_SIZE_P		global_work_size
+#else
+#endif
 
 
 void init_mat(float *mat, int len, float setVal) {
@@ -163,7 +179,7 @@ int main(void) {
 	a_T_gpu = (float *) malloc (data_size);
 
     printf("a:\n");
-    rand_mat(a, widthA*heightA, ELEM_RANGE);
+    rand_mat(a, widthA*heightA, ELEM_RAND_RANGE);
     print_mat(a, widthA, heightA);
 
 	printf("a^T_CPU:\n");
@@ -283,8 +299,9 @@ int main(void) {
 	//size_t global_work_size, local_work_size;
 	//local_work_size = len; // Number of work items in each local work-group
 	// Number of total work-items - localSize must be devisor
-	size_t global_work_size[2] = { max(widthA, heightA), max(widthA, heightA)};
 	//size_t global_work_size = (size_t) max(widthA, heightA);
+	SET_GLOBAL_WORK_SIZE
+	PRINT_GLOBAL_WORK_SIZE
 	
 	/*
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
@@ -299,7 +316,7 @@ int main(void) {
 	gettimeofday(&start, NULL);
 	for (int ridx = 0; ridx < RUN_NUM; ridx++) {
 		// Run kernel
-		clEnqueueNDRangeKernel(command_queue, kernel, NDIM, NULL, global_work_size,//&global_work_size,
+		clEnqueueNDRangeKernel(command_queue, kernel, NDIM, NULL, GLOBAL_WORK_SIZE_P,//&global_work_size,
 															   NULL,// &local_work_size,
 															   0, NULL, &event);
 		clWaitForEvents(1, &event);
