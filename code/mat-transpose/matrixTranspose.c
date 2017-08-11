@@ -28,19 +28,10 @@
 
 #if (NDIM == 1)
 	#define 	PROGRAM_FILE			"matrixTranspose_v1.cl"
-	#define 	SET_GLOBAL_WORK_SIZE	size_t global_work_size = MATRIX_WIDTH;
-	#define 	PRINT_GLOBAL_WORK_SIZE	printf(">>> global_work_size: %d\n", (int)global_work_size);
-	#define 	GLOBAL_WORK_SIZE_P		&global_work_size
 #elif (NDIM == 2)
 	#define		PROGRAM_FILE			"matrixTranspose_v2.cl"
-	#define 	SET_GLOBAL_WORK_SIZE    size_t global_work_size[NDIM] = {MATRIX_WIDTH, MATRIX_HEIGHT};
-	#define 	PRINT_GLOBAL_WORK_SIZE	printf(">>> global_work_size[%d]: (%d, %d)\n", NDIM, (int)global_work_size[0], (int)global_work_size[1]);
-	#define 	GLOBAL_WORK_SIZE_P		global_work_size
 #elif (NDIM == 3)
 	#define 	PROGRAM_FILE 			"matrixTranspose_v2.cl"
-	#define 	SET_GLOBAL_WORK_SIZE	size_t global_work_size[NDIM] = {MATRIX_WIDTH, MATRIX_HEIGHT,1};
-	#define 	PRINT_GLOBAL_WORK_SIZE	printf(">>> global_work_size[%d]: (%d, %d, %d)\n", NDIM, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
-	#define		GLOBAL_WORK_SIZE_P		global_work_size
 #else
 #endif
 
@@ -264,7 +255,7 @@ int main(int argc, char * argv[]) {
 	// global_work_size: Number of total work-items - localSize must be devisor
 	size_t *global_work_size_pointer = NULL;
 	if (ndim == 1) {
-		size_t global_work_size = heightA * widthA;
+		size_t global_work_size = max(heightA, widthA);
 		global_work_size_pointer = &global_work_size;
 		printf(">>> global_work_size: %d\n", (int)global_work_size);
 	}
@@ -283,17 +274,6 @@ int main(int argc, char * argv[]) {
 		goto error;
 	}
 		
-	//SET_GLOBAL_WORK_SIZE
-	//PRINT_GLOBAL_WORK_SIZE
-	
-	/*
-    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
-    if (ret != CL_SUCCESS) {
-        printf("failed to execute kernel for execution %d\n", (int) ret);
-        goto error;
-    }
-	*/
-
 	// Start the timed loop
 	printf(">>> Starting %d %s runs ...\n", run_num, KERNEL_FUNC);
 	gettimeofday(&start, NULL);
