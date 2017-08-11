@@ -262,12 +262,12 @@ int main(int argc, char * argv[]) {
 	else if (ndim == 2) {
 		size_t global_work_size[2] = { max(heightA, widthA), max(heightA, widthA) };
 		global_work_size_pointer = global_work_size;
-		printf(">>> global_work_size[%d]: (%d, %d)\n", NDIM, (int)global_work_size[0], (int)global_work_size[1]);
+		printf(">>> global_work_size[%d]: (%d, %d)\n", ndim, (int)global_work_size[0], (int)global_work_size[1]);
 	}
 	else if (ndim == 3) {
 		size_t global_work_size[3] = { max(heightA, widthA), max(heightA, widthA), 1};
 		global_work_size_pointer = global_work_size;
-		printf(">>> global_work_size[%d]: (%d, %d, %d)\n", NDIM, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
+		printf(">>> global_work_size[%d]: (%d, %d, %d)\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
 	}
 	else {
 		printf("global_work_size set error.\n");
