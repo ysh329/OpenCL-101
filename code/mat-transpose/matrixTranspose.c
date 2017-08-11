@@ -17,24 +17,8 @@
 #define		MATRIX_TRANSPOSE_GPU_ENABLE
 
 #define 	ELEM_RAND_RANGE		(100)
-#define     MATRIX_WIDTH        (1024)
-#define     MATRIX_HEIGHT       (MATRIX_WIDTH)
-#define 	NDIM				(2)
-#define 	RUN_NUM				(100)
-
 #define 	NOT_PRINT_FLAG
-
 #define 	KERNEL_FUNC			"matrixTranspose"
-
-#if (NDIM == 1)
-	#define 	PROGRAM_FILE			"matrixTranspose_v1.cl"
-#elif (NDIM == 2)
-	#define		PROGRAM_FILE			"matrixTranspose_v2.cl"
-#elif (NDIM == 3)
-	#define 	PROGRAM_FILE 			"matrixTranspose_v2.cl"
-#else
-#endif
-
 #define     LOCAL_WORK_SIZE_P		NULL
 
 #include "matop.h"
@@ -53,51 +37,39 @@ int main(int argc, char * argv[]) {
 		heightA,  widthA,
 		heightAT, widthAT,
 		len,
-		ndim,
+		ndim = 3,
 		run_num;
 
 	size_t 
-		data_size;
+		data_size,
+		global_work_size[3]={1,1,1};
 
 	char
-		program_file[] = PROGRAM_FILE;
+		program_file[] = "";
 
-/*********************************************************
-1. argc[1] ndim 			default: 2
-2. argc[2] heightA			default: 1024
-3. argc[3] widthA			default: =heightA
-4. argc[4] kernel_file_path	default: matrixTranspose_v1.cl
-5. argc[5] run_num			default: 100
-**********************************************************/
-	if (argc == 3) {
-		ndim = atoi( argv[1]  );
-		heightA = atoi( argv[2] );
-		widthA = heightA;
-	}
-	else if (argc == 4) {
-		ndim = atoi( argv[1]  );
-		heightA = atoi( argv[2] );
-		widthA = atoi( argv[3] );
-	}
-	else if (argc == 5) {
-		ndim = atoi( argv[1] );
-		heightA = atoi( argv[2] );
-		widthA = atoi( argv[3] );
-		strcpy( program_file, argv[4] );
-	}
-	else if (argc == 6) {
-		ndim = atoi( argv[1] );
-		heightA = atoi( argv[2] );
-		widthA = atoi( argv[3] );
-		strcpy( program_file, argv[4] );
-		run_num = atoi( argv[5] );
+	if (argc == 8) {
+		/*********************************
+		1. argc[1] heightA
+		2. argc[2] widthA
+		3. argc[3] kernel_file_path
+		4. argc[4] run_num
+
+		5. argc[5] global_work_size[0]
+		6. argc[6] global_work_size[1]
+		7. argc[7] global_work_size[2]
+		*********************************/
+		heightA = atoi( argv[1] );
+		widthA = atoi( argv[2] );
+		strcpy( program_file, argv[3] );
+		run_num = atoi( argv[4] );
+
+		global_work_size[0] = atoi( argv[5] );
+		global_work_size[1] = atoi( argv[6] );
+		global_work_size[2] = atoi( argv[7] );
 	}
 	else {
-		ndim = NDIM;
-		heightA = MATRIX_HEIGHT; 
-		widthA = MATRIX_WIDTH;
-		// program_file was set previously
-		run_num = RUN_NUM;
+		printf("using command: %s HEIGHTA WIDTHA KERNEL_FILE_PATH LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
+		exit(-1);
 	}
 
 	len = heightA * widthA;
@@ -121,7 +93,7 @@ int main(int argc, char * argv[]) {
 #endif
 
 #ifdef MATRIX_TRANSPOSE_CPU_ENABLE
-	printf(">>> Starting %d CPU runs ...\n", run_num);
+	printf(">>> %d times %s starting...\n", run_num, "CPU");
 	gettimeofday(&start, NULL);
 	for (int ridx = 0; ridx < run_num; ridx++)
 		transpose_mat(a, widthA, heightA, a_T_cpu);
@@ -130,7 +102,7 @@ int main(int argc, char * argv[]) {
         (double)(end.tv_usec-start.tv_usec)) / 1000000 / (double) run_num;
     gflops = 1.0 * heightA * widthA;
     gflops = gflops / duration * 1.0e-6;
-    printf("CPU \t\t\t%d x %d\t%lf s\t%lf MFLOPS\n\n", widthA, heightA, duration, gflops);
+    printf("CPU %d x %d %2.6lf s %2.6lf MFLOPS\n\n", widthA, heightA, duration, gflops);
 #endif
 
 #ifndef NOT_PRINT_FLAG
@@ -173,6 +145,7 @@ int main(int argc, char * argv[]) {
 		fprintf(stderr, "failed to load kernel.\n");
 		exit(1);
 	}
+
 	fseek(program_handle, 0, SEEK_END);
 	program_size = ftell(program_handle);
 	rewind(program_handle);
@@ -252,34 +225,28 @@ int main(int argc, char * argv[]) {
 	}
 
 	// local_work_size: Number of work items in each local work-group
-	// global_work_size: Number of total work-items - localSize must be devisor
-	size_t *global_work_size_pointer = NULL;
-	if (ndim == 1) {
-		size_t global_work_size = max(heightA, widthA);
-		global_work_size_pointer = &global_work_size;
-		printf(">>> global_work_size: %d\n", (int)global_work_size);
+	// global_work_size: Number of total work-items - localSize must be deviso
+
+	printf(">>> global_work_size[%d]: (%d, %d, %d)\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
+	int global_size = (int) global_work_size[0] * (int) global_work_size[1] * (int) global_work_size[2];
+	int task_size = heightA * widthA;
+	if (global_size < task_size) {
+		printf("[WARN] global work size is smaller than task size.\n");
+		global_work_size[0] = heightA;
+		global_work_size[1] = widthA;
+		if (strstr(program_file, "v1")) {
+			printf("[WARN] using kernel-v1, the second and third dim of global work size should be one.\n");
+			global_work_size[1] = 1;
+		}
+		printf(">>> new global_work_size[%d]: (%d, %d, %d)\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
 	}
-	else if (ndim == 2) {
-		size_t global_work_size[2] = { max(heightA, widthA), max(heightA, widthA) };
-		global_work_size_pointer = global_work_size;
-		printf(">>> global_work_size[%d]: (%d, %d)\n", ndim, (int)global_work_size[0], (int)global_work_size[1]);
-	}
-	else if (ndim == 3) {
-		size_t global_work_size[3] = { max(heightA, widthA), max(heightA, widthA), 1};
-		global_work_size_pointer = global_work_size;
-		printf(">>> global_work_size[%d]: (%d, %d, %d)\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
-	}
-	else {
-		printf("global_work_size set error.\n");
-		goto error;
-	}
-		
+
 	// Start the timed loop
-	printf(">>> Starting %d %s runs ...\n", run_num, KERNEL_FUNC);
+	printf(">>> %d times %s starting...\n", run_num, program_file);
 	gettimeofday(&start, NULL);
 	for (int ridx = 0; ridx < run_num; ridx++) {
 		// Run kernel
-		clEnqueueNDRangeKernel(command_queue, kernel, ndim, NULL, global_work_size_pointer,//&global_work_size,
+		clEnqueueNDRangeKernel(command_queue, kernel, ndim, NULL, global_work_size,//&global_work_size,
 															   LOCAL_WORK_SIZE_P,//&local_work_size,
 															   0, NULL, &event);
 		clWaitForEvents(1, &event);
@@ -289,8 +256,7 @@ int main(int argc, char * argv[]) {
         (double)(end.tv_usec-start.tv_usec)) / 1000000 / (double) run_num;
     gflops = 1.0 * heightA * widthA;
     gflops = gflops / duration * 1.0e-6;
-    printf("GPU %s %d x %d\t%lf s\t%lf MFLOPS\n\n", program_file, widthA, heightA, duration, gflops);
-
+    printf("GPU %d x %d %2.6lf s %2.6lf MFLOPS %s\n\n", widthA, heightA, duration, gflops, program_file);
 	
 	// Copy the output matrix ( transposed matrix a_T_gpu ) result from the GPU memory ( a_T_buff )
 	ret = clEnqueueReadBuffer(command_queue, a_T_buff, CL_TRUE, 0, data_size, (void *)a_T_gpu, 0, NULL, NULL);
@@ -307,7 +273,6 @@ int main(int argc, char * argv[]) {
 #endif
 
 	// Check result
-	//equal_mat(a_T_cpu, a_T_gpu, widthAT, heightAT);
 	equal_vec(a_T_cpu, a_T_gpu, widthAT*heightAT);
 	
 error:
