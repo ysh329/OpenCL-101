@@ -230,14 +230,10 @@ int main(int argc, char * argv[]) {
 	printf(">>> global_work_size[%d]: (%d, %d, %d)\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
 	int global_size = (int) global_work_size[0] * (int) global_work_size[1] * (int) global_work_size[2];
 	int task_size = heightA * widthA;
-	//if (global_size < task_size) {
-		printf("[WARN] global work size is smaller than task size.\n");
-		//global_work_size[0] = heightA;
-		//global_work_size[1] = widthA;
-		if (strstr(program_file, "v1.cl")) {
-			printf("[WARN] using kernel-v1, the second and third dim of global work size should be one.\n");
-			global_work_size[1] = 1;
-		//}
+	printf("[WARN] global work size is smaller than task size.\n");
+	if (strstr(program_file, "v1.cl")) {
+		printf("[WARN] using kernel-v1, the second and third dim of global work size should be one.\n");
+		global_work_size[1] = 1;
 		printf(">>> new global_work_size[%d]: (%d, %d, %d)\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
 	}
 
