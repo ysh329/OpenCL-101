@@ -272,6 +272,7 @@ int main(int argc, char * argv[]) {
 	equal_vec(a_T_cpu, a_T_gpu, widthAT*heightAT);
 	
 error:
+#ifdef MATRIX_TRANSPOSE_GPU_ENABLE
 	clFlush(command_queue);
 	clFinish(command_queue);
 	clReleaseKernel(kernel);
@@ -289,6 +290,7 @@ error:
 
 	// Free the host memory objects
 	free(program_buffer);
+#endif
 	free(a);
 	free(a_T_cpu);
 	free(a_T_gpu);
