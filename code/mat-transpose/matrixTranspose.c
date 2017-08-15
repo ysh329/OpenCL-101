@@ -224,8 +224,14 @@ int main(int argc, char * argv[]) {
 		goto error;
 	}
 
+	/*************************************************************************/
 	// local_work_size: Number of work items in each local work-group
 	// global_work_size: Number of total work-items - localSize must be deviso
+	/*************************************************************************/
+	/* WARNING: generally speaking, SIMD_NUM is fixed in program like below:
+		#define SIMD_NUM 4
+		global_work_size[0] = divideUp( tasksize / SIMD_NUM )
+	*************************************************************************/
 
 	printf(">>> global_work_size[%d]: (%d, %d, %d)\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
 	int global_size = (int) global_work_size[0] * (int) global_work_size[1] * (int) global_work_size[2];
@@ -245,7 +251,8 @@ int main(int argc, char * argv[]) {
 		clEnqueueNDRangeKernel(command_queue, kernel, ndim, NULL, global_work_size,//&global_work_size,
 															   LOCAL_WORK_SIZE_P,//&local_work_size,
 															   0, NULL, &event);
-		clWaitForEvents(1, &event);
+		clFinish(command_queue);
+		//clFinish(command_queue); == clWaitForEvents(1, &event);
 	}
 	gettimeofday(&end, NULL);
     duration = ((double)(end.tv_sec-start.tv_sec)*1000000 + 
