@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 
 void init_mat(float *mat, int len, float setVal) {
     for (int idx = 0; idx < len; idx++)
@@ -15,13 +16,14 @@ void rand_mat(float *mat, int len, int range) {
         mat[idx] = rand() % range;
 }
 
+// row-major
 void print_mat(float *mat, int width, int height) {
 #ifdef NOT_PRINT_FLAG
     return;
 #endif
-    for (int r = 0; r < height; r++) {
-        for (int c = 0; c < width; c++)
-            printf("%.2f ", mat[c*height+r]);
+	for (int r = 0; r < height; r++) {
+		for (int c = 0; c < width; c++)
+            printf("%.2f ", mat[r*width+c]);
         printf("\n");
     }
     printf("\n");
@@ -32,10 +34,11 @@ void print_vec(float *vec, int len) {
         printf("%.2f \n", vec[idx]);
 }
 
+// row-major
 void add_mat(float *a, float *b, float *res, int width, int height) {
-    for (int c = 0; c < width; c++)
-        for (int r = 0; r < height; r++)
-            res[c*height + r] = a[c*height + r] + b[c*height + r];
+	for (int r = 0; r < height; r++)
+		for (int c = 0; c < width; c++) 
+            res[r*width + c] = a[r*width + c] + b[r*width + c];
 }
 
 float max(float a, float b) {
