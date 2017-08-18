@@ -53,20 +53,22 @@ void add_vec(float *a, float *b, float *res, int len) {
         res[idx] = a[idx] + b[idx];
 }
 
+// row-major
 void transpose_mat(float *a, int width, int height, float *res) {
-    for (int c = 0; c < width; c++)
-        for (int r = 0; r < height; r++) {
-            res[r*width + c] = a[c*height + r]; 
+	for (int r = 0; r < height; r++)
+		for (int c = 0; c < width; c++) {
+            res[c*height + r] = a[r*width + c]; 
             //printf("res[%d, %d]:= a[%d, %d] = %.2f \n", r, c, c, r, a[c*height+r]);
             //printf("res[%d] := a[%d] = %.2f \n\n", r*width + c, c*height + r, a[c*height+r]);
         }
 }
 
+// row-major
 int equal_mat(float *a, float *b, int width, int height) {
     int correct_num = 0;
-    for (int c = 0; c < width; c++)
-        for (int r = 0; r < height; r++) 
-            if (a[c*height+r] - b[c*height+r] < 10e-8) 
+    for (int r = 0; r < height; r++)
+        for (int c = 0; c < width; c++) 
+            if (a[r*width + c] == b[r*width + c])
                 correct_num += 1;
 
     float correct_rate = (float) correct_num / ( width * height );
@@ -81,10 +83,10 @@ int equal_mat(float *a, float *b, int width, int height) {
 int equal_vec(float *a, float *b, int len) {
     int correct_num = 0;
     for (int idx = 0; idx < len; idx++) 
-        if (a[idx] - b[idx] < 10e-8) 
+        if (a[idx] == b[idx])
             correct_num += 1;
 
-    float correct_rate = (float) correct_num / len;
+    float correct_rate = (float) correct_num / (float) len;
     printf(">>> correct rate: %.4f\n", correct_rate);
     if (1.0 - correct_rate < 10e-8)
         printf(">>> ~ Bingo ~ matrix a == matrix b\n");
@@ -98,13 +100,14 @@ void dotprod_mat(float *a, float *b, float *res, int len) {
         res[idx] = a[idx] * b[idx];
 }
 
+// row-major
 int mult_mat(float *a, float *b, float *res, int M, int N, int K) {
     int i, j, p;
     init_mat(res, M*K, 0); 
     for (i = 0; i < M; i++)
         for (j = 0; j < N; j++) 
             for (p = 0; p < K; p++) {
-                res[j * M + i] += a[p * M + i] * b[j * K + p]; 
-                printf("res[%d, %d] %.2f += a[%d, %d] %.2f * b[%d, %d] %.2f \n", i, j, res[j*M+i], i, p, a[p*M+i], p, j, b[j*K+p]);
+                res[i * M + j] += a[i * K + p] * b[p * N + j]; 
+                printf("res[%d, %d] %.2f += a[%d, %d] %.2f * b[%d, %d] %.2f \n", i, j, res[i*M+j], i, p, a[i*K+p], p, j, b[p*N+j]);
             }
 }
