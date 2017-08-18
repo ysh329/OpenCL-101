@@ -5,20 +5,23 @@ def init():
 
 	############################# initialize parameters #############################
 	matrix_transpose_bin = "./matrixTranspose"
-	#kernel_file_path_list = ["./matrixTranspose_v1.cl", "./matrixTranspose_v2.cl"]
-	kernel_file_path_list = ["./matrixTranspose_v1_4x1.cl"]
+	kernel_file_path_list = ["./matrixTranspose_v2_colA_8x8.cl"]
+	#kernel_file_path_list = ["./matrixTranspose_v1_colA.cl", "./matrixTranspose_v2_colA.cl"]
+	#kernel_file_path_list = ["./matrixTranspose_v1_4x1.cl"]
+	#kernel_file_path_list = ["./matrixTranspose_v1_4x1_colA.cl"]
 	run_num = 100
 	size_list = map(lambda n: 2**n, xrange(4,14))
 	#################################################################################
 
 	global_work_size_2d_list = []
-	#global_work_size_list_4_kernel_1 = map(lambda size: (size,    1, 1), size_list)
-	global_work_size_list_4_kernel_1_1x4 = map(lambda size: (size/4,    1, 1), size_list)
-	#global_work_size_list_4_kernel_2 = map(lambda size: (size, size, 1), size_list)
-	#global_work_size_2d_list.append(global_work_size_list_4_kernel_1)
-	#global_work_size_2d_list.append(global_work_size_list_4_kernel_2)
 
-	global_work_size_2d_list.append(global_work_size_list_4_kernel_1_1x4)
+	#global_work_size_list_4_kernel_1 = map(lambda size: (size,    1, 1), size_list)
+	global_work_size_list_4_kernel_2 = map(lambda size: (size/8, size/8, 1), size_list)
+	#global_work_size_2d_list.append(global_work_size_list_4_kernel_1)
+	global_work_size_2d_list.append(global_work_size_list_4_kernel_2)
+
+	#global_work_size_list_4_kernel_1_1x4 = map(lambda size: (size/4,    1, 1), size_list)
+	#global_work_size_2d_list.append(global_work_size_list_4_kernel_1_1x4)
 
 	#################################################################################
 
@@ -59,3 +62,4 @@ if __name__ == "__main__":
 	init()
 	create_cmd()
 	run_cmd()
+
