@@ -108,6 +108,6 @@ int mult_mat(float *a, float *b, float *res, int M, int N, int K) {
         for (j = 0; j < N; j++) 
             for (p = 0; p < K; p++) {
                 res[i * M + j] += a[i * K + p] * b[p * N + j]; 
-                printf("res[%d, %d] %.2f += a[%d, %d] %.2f * b[%d, %d] %.2f \n", i, j, res[i*M+j], i, p, a[i*K+p], p, j, b[p*N+j]);
+                //printf("res[%d, %d] %.2f += a[%d, %d] %.2f * b[%d, %d] %.2f \n", i, j, res[i*M+j], i, p, a[i*K+p], p, j, b[p*N+j]);
             }
 }
