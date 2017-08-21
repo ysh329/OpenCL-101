@@ -1,3 +1,6 @@
+
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+
 __kernel void matrixTranspose(const int heightA,
 							                const int widthA,
 							                __global const float *a,
@@ -8,15 +11,15 @@ __kernel void matrixTranspose(const int heightA,
 
 	if ((rowA < heightA) && (colA < widthA)) {
 
-    __global float *src_vec1x4_0 = a + (rowA+0) * widthA + (colA+0);
-    __global float *src_vec1x4_1 = a + (rowA+1) * widthA + (colA+0);
-    __global float *src_vec1x4_2 = a + (rowA+2) * widthA + (colA+0);
-    __global float *src_vec1x4_3 = a + (rowA+3) * widthA + (colA+0);
+    __global float *src_a_0 = a + (rowA+0) * widthA + (colA+0);
+    __global float *src_a_1 = a + (rowA+1) * widthA + (colA+0);
+    __global float *src_a_2 = a + (rowA+2) * widthA + (colA+0);
+    __global float *src_a_3 = a + (rowA+3) * widthA + (colA+0);
 
-    float4 vec1x4_0 = *((__global float4 *)src_vec1x4_0);
-    float4 vec1x4_1 = *((__global float4 *)src_vec1x4_1);
-    float4 vec1x4_2 = *((__global float4 *)src_vec1x4_2);
-    float4 vec1x4_3 = *((__global float4 *)src_vec1x4_3);
+    half4 vec1x4_0 = *((__global half4 *)src_a_0);
+    half4 vec1x4_1 = *((__global half4 *)src_a_1);
+    half4 vec1x4_2 = *((__global half4 *)src_a_2);
+    half4 vec1x4_3 = *((__global half4 *)src_a_3);
 
 		a_T[(colA+0) * heightA + (rowA+0)] = vec1x4_0.x;
 		a_T[(colA+1) * heightA + (rowA+0)] = vec1x4_0.y;
