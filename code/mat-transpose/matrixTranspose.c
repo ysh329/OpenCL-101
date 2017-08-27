@@ -17,7 +17,7 @@
 #define		MATRIX_TRANSPOSE_GPU_ENABLE
 
 #define 	ELEM_RAND_RANGE		  (100)
-#define 	NOT_PRINT_FLAG
+//#define 	NOT_PRINT_FLAG
 #define 	KERNEL_FUNC			    "matrixTranspose"
 #define   LOCAL_WORK_SIZE_P		NULL
 
@@ -97,12 +97,12 @@ int main(int argc, char * argv[]) {
 	gettimeofday(&start, NULL);
 	for (int ridx = 0; ridx < run_num; ridx++)
 		transpose_mat(a, widthA, heightA, a_T_cpu);
-    gettimeofday(&end, NULL);
-    duration = ((double)(end.tv_sec-start.tv_sec)*1000000 + 
+  gettimeofday(&end, NULL);
+  duration = ((double)(end.tv_sec-start.tv_sec)*1000000 + 
         (double)(end.tv_usec-start.tv_usec)) / 1000000 / (double) run_num;
-    gflops = 1.0 * heightA * widthA;
-    gflops = gflops / duration * 1.0e-6;
-    printf("CPU %d x %d %2.6lf s %2.6lf MFLOPS\n\n", widthA, heightA, duration, gflops);
+  gflops = 1.0 * heightA * widthA;
+  gflops = gflops / duration * 1.0e-6;
+  printf("CPU %d x %d %2.6lf s %2.6lf MFLOPS\n\n", widthA, heightA, duration, gflops);
 #endif
 
 #ifndef NOT_PRINT_FLAG
