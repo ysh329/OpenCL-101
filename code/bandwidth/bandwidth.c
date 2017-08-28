@@ -11,7 +11,8 @@
 
 #define   PRINT_LINE(title)         printf("============== %s ==============\n", title);
 
-#define   CL_DEVICE_TYPE            CL_DEVICE_TYPE_GPU
+#define   CL_DEVICE_TYPE            CL_DEVICE_TYPE_CPU
+#define   PROGRAM_FILE              "bandwidth_kernel.cl"
 #define   LOCAL_WORK_SIZE_POINTER   NULL
 
 #define   BANDWIDTH_CPU_ENABLE
@@ -52,7 +53,7 @@ int main(int argc, char * argv[]) {
       program_file[] = "",
       kernel_func[] = "";
 
-    if (argc == 9) {
+    if (argc == 8) {
       /*********************************
       1. argc[1] heightA
       2. argc[2] widthA
@@ -66,16 +67,21 @@ int main(int argc, char * argv[]) {
       *********************************/
       heightA = atoi( argv[1] );
       widthA = atoi( argv[2] );
-      strcpy( program_file, argv[3] );
-      strcpy( kernel_func, argv[4] );
-      run_num = atoi( argv[5] );
+      //strcpy(program_file, argv[3]);
+      strcpy(program_file, &PROGRAM_FILE);
+      strcpy(kernel_func, argv[3]);
+      printf("PROGRAM_FILE:%s\n", PROGRAM_FILE);
+      printf("program_file:%s\n", program_file);
+      printf("kernel_func:%s\n", kernel_func);
+      printf("argv[4]:%s\n", argv[3]);
 
-      global_work_size[0] = atoi( argv[6] );
-      global_work_size[1] = atoi( argv[7] );
-      global_work_size[2] = atoi( argv[8] );
+      run_num = atoi( argv[4] );
+      global_work_size[0] = atoi( argv[5] );
+      global_work_size[1] = atoi( argv[6] );
+      global_work_size[2] = atoi( argv[7] );
     }
     else {
-      printf("usage: %s HEGHTA WIDTHA KERNEL_FILE_PATH LOOP_EXECUTION_TIME GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[3]\n", argv[0]);
+      printf("usage: %s HEGHTA WIDTHA KERNEL_FUN_NAME LOOP_EXECUTION_TIME GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[3]\n", argv[0]);
       exit(-1);
     }
 
@@ -112,13 +118,16 @@ int main(int argc, char * argv[]) {
     duration = ((double)(end.tv_sec-start.tv_sec)*1000000 + 
             (double)(end.tv_usec-start.tv_usec)) / 1000000 / (double) run_num;
     gflops = 1.0 * heightA * widthA;
+    gflops = gflops / duration * 1.0e-6;
     printf("%s %d x %d %2.6lf s %2.6lf MFLOPS\n\n", "CPU", heightA, widthA, duration, gflops);
 #endif
 
-    PRINT_LINE("CHECK")
+    PRINT_LINE("CHECK CPU RESULT")
     equal_vec(a_h, a_from_h, len);
+#ifndef NOT_PRINT_FLAG
     printf("a_from_h:\n");
     print_mat(a_from_h, heightA, widthA);
+#endif
 
 
 #ifdef BANDWIDTH_GPU_ENABLE
@@ -144,6 +153,8 @@ int main(int argc, char * argv[]) {
     char *program_buffer;
     size_t program_size;
 
+    printf("program_file: %s\n", program_file);
+    printf("kernel_func: %s\n", kernel_func);
     program_handle = fopen(program_file, "r");
     if (program_handle == NULL) {
         fprintf(stderr, "failed to load kernel.\n");

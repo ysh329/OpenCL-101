@@ -1,7 +1,7 @@
 __kernel void global_bandwith_v1_float(const int heightA,
-							               const int widthA,
-							               __global const ELEM_TYPE *a,
-                             __global ELEM_TYPE *b) {
+                                       const int widthA,
+                                       __global const ELEM_TYPE *a,
+                                       __global ELEM_TYPE *b) {
 	const int colA = get_global_id(0);
 
 	if (colA < widthA) {
