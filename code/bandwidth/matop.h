@@ -22,8 +22,8 @@ void print_mat(float *mat, int width, int height) {
 #ifdef NOT_PRINT_FLAG
     return;
 #endif
-	for (int r = 0; r < height; r++) {
-		for (int c = 0; c < width; c++)
+    for (int r = 0; r < height; r++) {
+        for (int c = 0; c < width; c++)
             printf("%.2f ", mat[r*width+c]);
         printf("\n");
     }
