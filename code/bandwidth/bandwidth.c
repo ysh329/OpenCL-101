@@ -259,35 +259,27 @@ int main(int argc, char * argv[]) {
     }
 
     /* gpu copy */
-
     printf(">>> %d times %s.%s starting...\n", run_num, program_file, kernel_func);
-    //gettimeofday(&start, NULL);
-    for (int ridx = 0; ridx < run_num; ridx++) {
-        
+    double sum_duration = 0.0;
+    for (int ridx = 0; ridx < (run_num+1); ridx++) { 
         gettimeofday(&start, NULL);
         // Run kernel
         clEnqueueNDRangeKernel(command_queue, kernel, ndim, NULL, global_work_size,
                 LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);
         clFinish(command_queue);
-
         gettimeofday(&end, NULL);
         duration = ((double)(end.tv_sec-start.tv_sec) + 
                 (double)(end.tv_usec-start.tv_usec)/1000000);
-        gflops = 1.0 * heightA * widthA;
-        gflops = gflops / duration * 1.0e-6;
-        gbps = 2.0 * heightA * widthA * sizeof(ELEM_TYPE) / (1024*1024*1024) / duration;
-        printf(">>> %s %d x %d %2.6lf s %2.6lf MFLOPS %s\n\n", OPENCL_DEVICE_TYPE, heightA, widthA, duration, gflops, program_file);
-        printf(">>> GB/s: %.2f\n", gbps);
+        if (ridx == 0)
+            continue;
+        sum_duration += duration;
     }
-    /*gettimeofday(&end, NULL);
-    duration = ((double)(end.tv_sec-start.tv_sec) + 
-            (double)(end.tv_usec-start.tv_usec)/1000000) / (double) run_num;
     gflops = 1.0 * heightA * widthA;
     gflops = gflops / duration * 1.0e-6;
+    duration = sum_duration / (double)run_num;
     gbps = 2.0 * heightA * widthA * sizeof(ELEM_TYPE) / (1024*1024*1024) / duration;
     printf(">>> %s %d x %d %2.6lf s %2.6lf MFLOPS %s\n\n", OPENCL_DEVICE_TYPE, heightA, widthA, duration, gflops, program_file);
     printf(">>> GB/s: %.2f\n", gbps);
-    */
 
     // Copy the output result from device memory
 
