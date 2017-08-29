@@ -4,6 +4,7 @@ __kernel void global_bandwidth_float_v1(const int heightA, const int widthA, __g
     b[idx] = a[idx];
 }
 
+
 /*
 __kernel void global_bandwidth_float_v2(const int heightA, const int widthA, __global const float2 *a, __global float2 *b) {
     const int idx = get_global_id(0);
@@ -19,4 +20,5 @@ __kernel void global_bandwidth_float_v4(const int heightA, const int widthA, __g
 
     float4 value = *((__global float4 *)(a + step)) 
     *((__global float4 *)(b + step)) = value;
-}*/
+}
+*/
