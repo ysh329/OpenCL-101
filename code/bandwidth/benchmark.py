@@ -39,9 +39,10 @@ def create_cmd():
 def run_cmd():
     import os
     for cmd_idx in xrange(len(cmd_list)):
+        cmd = cmd_list[cmd_idx]
         os.system(cmd)
 
 if __name__ == "__main__":
     init()
     create_cmd()
-    #run_cmd()
+    run_cmd()

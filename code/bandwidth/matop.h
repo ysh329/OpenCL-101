@@ -75,9 +75,9 @@ int equal_mat(float *a, float *b, int width, int height) {
     float correct_rate = (float) correct_num / ( width * height );
     printf(">>> correct rate: %.4f\n", correct_rate);
     if (1.0 - correct_rate < 10e-6)
-        printf(">>> ~ Bingo ~ matrix a == matrix b\n");
+        printf(">>> ~ Bingo ~ matrix a == matrix b\n\n");
     else
-        printf(">>> matrix a is equal to matrix b\n");
+        printf(">>> matrix a is equal to matrix b\n\n");
     return 1;
 }
 
@@ -90,9 +90,9 @@ int equal_vec(float *a, float *b, int len) {
     float correct_rate = (float) correct_num / (float) len;
     printf(">>> correct rate: %.4f\n", correct_rate);
     if (1.0 - correct_rate < 10e-8)
-        printf(">>> ~ Bingo ~ matrix a == matrix b\n");
+        printf(">>> ~ Bingo ~ matrix a == matrix b\n\n");
     else
-        printf(">>> matrix a is NOT equal to matrix b\n");
+        printf(">>> matrix a is NOT equal to matrix b\n\n");
     return 1;
 }
 
