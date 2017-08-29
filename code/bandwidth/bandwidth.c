@@ -107,6 +107,7 @@ int main(int argc, char * argv[]) {
     print_mat(a_from_d, heightA, widthA);
 #endif
 
+    PRINT_LINE("CPU RESULT")
     /* cpu copy */
 #ifdef BANDWIDTH_CPU_ENABLE
     printf(">>> %d time %s starting...\n", run_num, "CPU");
@@ -121,10 +122,9 @@ int main(int argc, char * argv[]) {
     gflops = gflops / duration * 1.0e-6;
     gbps = 2.0 * heightA * widthA * sizeof(ELEM_TYPE) / (1024*1024*1024) / duration;
     printf(">>> %s %d x %d %2.6lf s %2.6lf MFLOPS\n\n", "CPU", heightA, widthA, duration, gflops);
-    printf(">>> GB/s: %.2f\n", gbps);
+    printf(">>> bandwidth: %.2f GB/s\n", gbps);
 #endif
 
-    PRINT_LINE("CHECK CPU RESULT")
     equal_vec(a_h, a_from_h, len);
 #ifndef NOT_PRINT_FLAG
     printf("a_from_h:\n");
@@ -155,6 +155,7 @@ int main(int argc, char * argv[]) {
     char *program_buffer;
     size_t program_size;
 
+    PRINT_LINE("GPU RESULT")
     printf(">>> program_file: %s\n", program_file);
     printf(">>> kernel_func: %s\n", kernel_func);
     program_handle = fopen(program_file, "r");
@@ -251,11 +252,11 @@ int main(int argc, char * argv[]) {
         goto error;
     }
 
-    printf(">>> global_work_size[%d]: { %d, %d, %d}\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
+    printf(">>> global_work_size[%d]: { %d, %d, %d }\n\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
     int global_size = (int) global_work_size[0] * (int) global_work_size[1] * (int) global_work_size[2];
     int task_size = heightA * widthA;
     if (global_size < task_size) {
-        printf("[WARN] global work size (%d) is smaller than task size (%d).\n", global_size, task_size);
+        printf("[WARN] global work size (%d) is smaller than task size (%d).\n\n", global_size, task_size);
     }
 
     /* gpu copy */
@@ -270,8 +271,10 @@ int main(int argc, char * argv[]) {
         gettimeofday(&end, NULL);
         duration = ((double)(end.tv_sec-start.tv_sec) + 
                 (double)(end.tv_usec-start.tv_usec)/1000000);
-        if (ridx == 0)
+        if (ridx == 0) {
+            printf(">>> [NOTE] skip first time.\n");
             continue;
+        }
         sum_duration += duration;
     }
     gflops = 1.0 * heightA * widthA;
@@ -279,7 +282,7 @@ int main(int argc, char * argv[]) {
     duration = sum_duration / (double)run_num;
     gbps = 2.0 * heightA * widthA * sizeof(ELEM_TYPE) / (1024*1024*1024) / duration;
     printf(">>> %s %d x %d %2.6lf s %2.6lf MFLOPS %s\n\n", OPENCL_DEVICE_TYPE, heightA, widthA, duration, gflops, program_file);
-    printf(">>> GB/s: %.2f\n", gbps);
+    printf(">>> bandwidth: %.2f GB/s\n", gbps);
 
     // Copy the output result from device memory
 
@@ -288,8 +291,7 @@ int main(int argc, char * argv[]) {
         printf("failed to copy data from device to host.%d\n", (int)ret);
         goto error;
     }
-    PRINT_LINE("CHECK GPU RESULT")
-        equal_vec(a_h, a_from_d, len);
+    equal_vec(a_h, a_from_d, len);
 
 #ifndef NOT_PRINT_FLAG
     printf("a_from_d:\n");
