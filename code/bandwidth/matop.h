@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <time.h>
 
-void init_mat(float *mat, int len, float setVal) {
+void init_mat(ELEM_TYPE *mat, int len, ELEM_TYPE setVal) {
     for (int idx = 0; idx < len; idx++)
         mat[idx] = setVal;
 }
 
-void rand_mat(float *mat, int len, int range) {
+void rand_mat(ELEM_TYPE *mat, int len, int range) {
     if (range < 1) {
         printf("range value can't be less than 1.\n");
         exit(-1);
@@ -18,13 +18,13 @@ void rand_mat(float *mat, int len, int range) {
 }
 
 // row-major
-void print_mat(float *mat, int width, int height) {
+void print_mat(ELEM_TYPE *mat, int width, int height) {
 #ifdef NOT_PRINT_FLAG
     return;
 #endif
     for (int r = 0; r < height; r++) {
         for (int c = 0; c < width; c++)
-            printf("%.2f ", mat[r*width+c]);
+            printf("%.2f ", (float)mat[r*width+c]);
         printf("\n");
     }
     printf("\n");
@@ -32,13 +32,13 @@ void print_mat(float *mat, int width, int height) {
 
 void print_vec(float *vec, int len) {
     for (int idx = 0; idx < len; idx++)
-        printf("%.2f \n", vec[idx]);
+        printf("%.2f \n", (float)vec[idx]);
 }
 
 // row-major
 void add_mat(float *a, float *b, float *res, int width, int height) {
-	for (int r = 0; r < height; r++)
-		for (int c = 0; c < width; c++) 
+    for (int r = 0; r < height; r++)
+        for (int c = 0; c < width; c++) 
             res[r*width + c] = a[r*width + c] + b[r*width + c];
 }
 
@@ -56,8 +56,8 @@ void add_vec(float *a, float *b, float *res, int len) {
 
 // row-major
 void transpose_mat(float *a, int width, int height, float *res) {
-	for (int r = 0; r < height; r++)
-		for (int c = 0; c < width; c++) {
+    for (int r = 0; r < height; r++)
+		    for (int c = 0; c < width; c++) {
             res[c*height + r] = a[r*width + c]; 
             //printf("res[%d, %d]:= a[%d, %d] = %.2f \n", r, c, c, r, a[c*height+r]);
             //printf("res[%d] := a[%d] = %.2f \n\n", r*width + c, c*height + r, a[c*height+r]);
@@ -65,7 +65,7 @@ void transpose_mat(float *a, int width, int height, float *res) {
 }
 
 // row-major
-int equal_mat(float *a, float *b, int width, int height) {
+int equal_mat(ELEM_TYPE *a, ELEM_TYPE *b, int width, int height) {
     int correct_num = 0;
     for (int r = 0; r < height; r++)
         for (int c = 0; c < width; c++) 
@@ -81,7 +81,7 @@ int equal_mat(float *a, float *b, int width, int height) {
     return 1;
 }
 
-int equal_vec(float *a, float *b, int len) {
+int equal_vec(ELEM_TYPE *a, ELEM_TYPE *b, int len) {
     int correct_num = 0;
     for (int idx = 0; idx < len; idx++) 
         if (a[idx] == b[idx])
@@ -102,7 +102,7 @@ void dotprod_mat(float *a, float *b, float *res, int len) {
 }
 
 // row-major
-int mult_mat(float *a, float *b, float *res, int M, int N, int K) {
+int mult_mat(ELEM_TYPE *a, ELEM_TYPE *b, ELEM_TYPE *res, int M, int N, int K) {
     int i, j, p;
     init_mat(res, M*K, 0); 
     for (i = 0; i < M; i++)
@@ -113,7 +113,7 @@ int mult_mat(float *a, float *b, float *res, int M, int N, int K) {
             }
 }
 
-void copy_mat(float *a, float *b, int len) {
+void copy_mat(ELEM_TYPE *a, ELEM_TYPE *b, int len) {
     for (int i = 0; i < len; i++) {
         b[i] = a[i];
     }

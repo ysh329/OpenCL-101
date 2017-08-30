@@ -5,7 +5,7 @@
 #include <sys/time.h>
 #include <math.h>
 
-#define   ELEM_TYPE                     float
+#define   ELEM_TYPE                     int
 #define   ELEM_RAND_RANGE               (100)
 #define   ELEM_INIT_VALUE               (1)
 
@@ -33,11 +33,6 @@ int main(int argc, char * argv[]) {
     struct timeval start, end;
     double duration, gflops, gbps;   
 
-    ELEM_TYPE
-      *a_h,
-      *a_from_h,
-      *a_from_d;
-
     int
       heightA,
       widthA,
@@ -51,39 +46,46 @@ int main(int argc, char * argv[]) {
 
     char
       program_file[KERNEL_FILE_AND_FUNC_MAX_LEN] = "",
-      kernel_func[KERNEL_FILE_AND_FUNC_MAX_LEN] = "";
+      kernel_func[KERNEL_FILE_AND_FUNC_MAX_LEN] = "",
+      cl_program_build_options[KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D ELEM_TYPE=";
+      strcat(cl_program_build_options, ELEM_TYPE);
 
     if (argc == 9) {
-      /*********************************
-      1. argc[1] heightA
-      2. argc[2] widthA
+        /*********************************
+          1. argc[1] heightA
+          2. argc[2] widthA
 
-      3. argc[3] kernel_file_path
-      4. argc[4] kernel_func_name
+          3. argc[3] kernel_file_path
+          4. argc[4] kernel_func_name
 
-      5. argc[5] run_num
+          5. argc[5] run_num
 
-      6. argc[6] global_work_size[0]
-      7. argc[7] global_work_size[1]
-      8. argc[8] global_work_size[2]
-      *********************************/
-      heightA = atoi( argv[1] );
-      widthA = atoi( argv[2] );
-      strcpy(program_file, argv[3]);
-      strcpy(kernel_func, argv[4]);
-      //printf("program_file:%s\n", program_file);
-      //printf("argv[3]:%s\n\n", argv[3]);
-      //printf("kernel_func:%s\n", kernel_func);
-      //printf("argv[4]:%s\n", argv[4]);
-      run_num = atoi( argv[5] );
-      global_work_size[0] = atoi( argv[6] );
-      global_work_size[1] = atoi( argv[7] );
-      global_work_size[2] = atoi( argv[8] );
+          6. argc[6] global_work_size[0]
+          7. argc[7] global_work_size[1]
+          8. argc[8] global_work_size[2]
+        *********************************/
+        heightA = atoi( argv[1] );
+        widthA = atoi( argv[2] );
+        strcpy(program_file, argv[3]);
+        strcpy(kernel_func, argv[4]);
+        //printf("program_file:%s\n", program_file);
+        //printf("argv[3]:%s\n\n", argv[3]);
+        //printf("kernel_func:%s\n", kernel_func);
+        //printf("argv[4]:%s\n", argv[4]);
+        run_num = atoi( argv[5] );
+        global_work_size[0] = atoi( argv[6] );
+        global_work_size[1] = atoi( argv[7] );
+        global_work_size[2] = atoi( argv[8] );
     }
     else {
-        printf("usage: %s HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUN_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[3]\n", argv[0]);
+        printf("usage: %s HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUN_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
         exit(-1);
     }
+
+    ELEM_TYPE
+      *a_h,
+      *a_from_h,
+      *a_from_d;
 
     len = heightA * widthA;
     data_size = len * sizeof( ELEM_TYPE );
@@ -96,9 +98,8 @@ int main(int argc, char * argv[]) {
     init_mat(a_from_h, len, ELEM_INIT_VALUE);
     init_mat(a_from_d, len, ELEM_INIT_VALUE);
 
-    PRINT_LINE("INIT")
-
 #ifndef NOT_PRINT_FLAG
+    PRINT_LINE("INIT")
     printf("a_h:\n");
     print_mat(a_h, heightA, widthA);
     printf("a_from_h:\n");
@@ -110,7 +111,7 @@ int main(int argc, char * argv[]) {
     PRINT_LINE("CPU RESULT")
     /* cpu copy */
 #ifdef BANDWIDTH_CPU_ENABLE
-    printf(">>> %d time %s starting...\n", run_num, "CPU");
+    printf(">>> %d times %s starting...\n", run_num, "CPU");
     gettimeofday(&start, NULL);
     for (int ridx = 0; ridx < run_num; ridx++) {
         copy_mat(a_h, a_from_h, len);
@@ -156,6 +157,7 @@ int main(int argc, char * argv[]) {
     size_t program_size;
 
     PRINT_LINE("GPU RESULT")
+    ret = system("cat /sys/class/misc/mali0/device/gpuinfo");
     printf(">>> program_file: %s\n", program_file);
     printf(">>> kernel_func: %s\n", kernel_func);
     program_handle = fopen(program_file, "r");
@@ -227,7 +229,7 @@ int main(int argc, char * argv[]) {
     }
 
     // Build kernel program
-    ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+    ret = clBuildProgram(program, 1, &device_id, cl_program_build_options, NULL, NULL);
     if (ret != CL_SUCCESS) {
         fprintf(stderr, "failed to build program.%d\n", (int)ret);
         char build_log[16348];
@@ -252,11 +254,11 @@ int main(int argc, char * argv[]) {
         goto error;
     }
 
-    printf(">>> global_work_size[%d]: { %d, %d, %d }\n\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
+    printf(">>> global_work_size[%d]: { %d, %d, %d }\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
     int global_size = (int) global_work_size[0] * (int) global_work_size[1] * (int) global_work_size[2];
     int task_size = heightA * widthA;
     if (global_size < task_size) {
-        printf("[WARN] global work size (%d) is smaller than task size (%d).\n\n", global_size, task_size);
+        printf(">>> [WARN] global work size (%d) is smaller than task size (%d).\n\n", global_size, task_size);
     }
 
     /* gpu copy */
@@ -277,7 +279,7 @@ int main(int argc, char * argv[]) {
         }
         sum_duration += duration;
     }
-    gflops = 1.0 * heightA * widthA;
+    gflops = 2.0 * heightA * widthA;
     gflops = gflops / duration * 1.0e-6;
     duration = sum_duration / (double)run_num;
     gbps = 2.0 * heightA * widthA * sizeof(ELEM_TYPE) / (1024*1024*1024) / duration;
@@ -288,6 +290,7 @@ int main(int argc, char * argv[]) {
 
     ret = clEnqueueReadBuffer(command_queue, a_from_d_buff, CL_TRUE, 0, data_size, (void *)a_from_d, 0, NULL, NULL);
     if (ret != CL_SUCCESS) {
+
         printf("failed to copy data from device to host.%d\n", (int)ret);
         goto error;
     }
