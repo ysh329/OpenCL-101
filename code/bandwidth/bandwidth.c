@@ -5,13 +5,17 @@
 #include <sys/time.h>
 #include <math.h>
 
-#define   ELEM_TYPE_STR                 "float"
+// CPU ELEMENT TYPE
 #define   ELEM_TYPE                     float
+#define   ELEM_TYPE_STR                 "float"
+// OPENCL ELEMENT TYPE
+#define   CL_ELEM_TYPE                  float4
+#define   CL_ELEM_TYPE_STR              "float4"
 
 #define   ELEM_RAND_RANGE               (100)
 #define   ELEM_INIT_VALUE               (1)
 
-#define   PRINT_LINE(title)             printf("============== %s ==============\n", title);
+#define   PRINT_LINE(title)             printf("============== %s ==============\n", title)
 
 #define   BANDWIDTH_CPU_ENABLE
 #define   BANDWIDTH_GPU_ENABLE
@@ -36,34 +40,39 @@ int main(int argc, char * argv[]) {
     double duration, gflops, gbps;   
 
     int
-      heightA,
-      widthA,
-      len,
-      ndim = 3,
-      run_num;
+        heightA,
+        widthA,
+        len,
+        ndim = 3,
+        run_num;
 
     size_t
-      data_size,
-      global_work_size[3] = {1,1,1};
-
-    void *a_h = NULL;
-    void *a_from_h = NULL;
-    void *a_from_d = NULL;
+        data_size,
+        global_work_size[3] = {1,1,1};
+    
+    void
+        *a_h = NULL,
+        *a_from_h = NULL,
+        *a_from_d = NULL;
 
     printf(">>> [INFO] ELEM_TYPE_STR: %s\n", ELEM_TYPE_STR);
+    printf(">>> [INFO] CL_ELEM_TYPE_STR: %s\n", CL_ELEM_TYPE_STR);
     if (strstr(ELEM_TYPE_STR, "int")!=NULL) {
+
     int 
         *a_h = NULL,
         *a_from_h = NULL,
         *a_from_d = NULL;
     }
     else if (strstr(ELEM_TYPE_STR, "float")!=NULL) {
+
     float
         *a_h = NULL,
         *a_from_h = NULL,
         *a_from_d = NULL;
     }
     else if (strstr(ELEM_TYPE_STR, "double")!=NULL) {
+
     double
         *a_h = NULL,
         *a_from_h = NULL,
@@ -77,7 +86,11 @@ int main(int argc, char * argv[]) {
     char
       program_file[KERNEL_FILE_AND_FUNC_MAX_LEN] = "",
       kernel_func[KERNEL_FILE_AND_FUNC_MAX_LEN] = "",
-      cl_program_build_options[KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D ELEM_TYPE=";
+      cl_program_build_options[KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D ";
+      strcat(cl_program_build_options, "CL_ELEM_TYPE=");
+      strcat(cl_program_build_options, CL_ELEM_TYPE_STR);
+      printf(">>> [INFO] cl_program_build_options: %s\n", cl_program_build_options);
+
 
     if (argc == 9) {
         /*********************************
@@ -97,15 +110,6 @@ int main(int argc, char * argv[]) {
         widthA = atoi( argv[2] );
         strcpy(program_file, argv[3]);
         strcpy(kernel_func, argv[4]);
-
-        if (strstr(kernel_func, ELEM_TYPE_STR)!=NULL) {
-            strcat(cl_program_build_options, ELEM_TYPE_STR);
-            printf(">>> [INFO] cl_program_build_options: %s\n", cl_program_build_options);
-        }
-        //else {
-        //    printf(">>> [ERROR] fail to define cl_program_build_options, kernel_func(%s) doesn't contain ELEM_TYPE_STR(%s)\n", kernel_func, ELEM_TYPE_STR);
-        //    exit(-1);
-        //}
 
         //printf("program_file:%s\n", program_file);
         //printf("argv[3]:%s\n\n", argv[3]);
@@ -135,7 +139,7 @@ int main(int argc, char * argv[]) {
     init_mat(a_from_d, len, ELEM_INIT_VALUE);
 
 #ifndef NOT_PRINT_FLAG
-    PRINT_LINE("INIT")
+    PRINT_LINE("INIT");
     printf("a_h:\n");
     print_mat(a_h, heightA, widthA);
     printf("a_from_h:\n");
@@ -144,10 +148,10 @@ int main(int argc, char * argv[]) {
     print_mat(a_from_d, heightA, widthA);
 #endif
 
-    PRINT_LINE("CPU RESULT")
+    PRINT_LINE("CPU RESULT");
     /* cpu copy */
 #ifdef BANDWIDTH_CPU_ENABLE
-    printf(">>> %d times %s starting...\n", run_num, "CPU");
+    printf(">>> [INFO] %d times %s starting...\n", run_num, "CPU");
     gettimeofday(&start, NULL);
     for (int ridx = 0; ridx < run_num; ridx++) {
         copy_mat(a_h, a_from_h, len);
@@ -158,8 +162,8 @@ int main(int argc, char * argv[]) {
     gflops = 2.0 * heightA * widthA;
     gflops = gflops / duration * 1.0e-6;
     gbps = 2.0 * heightA * widthA * sizeof(ELEM_TYPE) / (1024*1024*1024) / duration;
-    printf(">>> %s %d x %d %2.6lf s %2.6lf MFLOPS\n\n", "CPU", heightA, widthA, duration, gflops);
-    printf(">>> bandwidth: %.2f GB/s\n", gbps);
+    printf(">>> [INFO] %s %d x %d %2.6lf s %2.6lf MFLOPS\n\n", "CPU", heightA, widthA, duration, gflops);
+    printf(">>> [INFO] bandwidth: %.2f GB/s\n", gbps);
 #endif
 
     equal_vec(a_h, a_from_h, len);
@@ -192,13 +196,13 @@ int main(int argc, char * argv[]) {
     char *program_buffer;
     size_t program_size;
 
-    PRINT_LINE("GPU RESULT")
+    PRINT_LINE("GPU RESULT");
     ret = system("cat /sys/class/misc/mali0/device/gpuinfo");
-    printf(">>> program_file: %s\n", program_file);
-    printf(">>> kernel_func: %s\n", kernel_func);
+    printf(">>> [INFO]program_file: %s\n", program_file);
+    printf(">>> [INFO] kernel_func: %s\n", kernel_func);
     program_handle = fopen(program_file, "r");
     if (program_handle == NULL) {
-        fprintf(stderr, "failed to load kernel.\n");
+        fprintf(stderr, ">>> [ERROR] failed to load kernel.\n");
         exit(-1);
     }
 
@@ -209,13 +213,13 @@ int main(int argc, char * argv[]) {
     program_buffer[program_size] = '\0';
     size_t num_read = fread(program_buffer, sizeof(char), program_size, program_handle);
     if (num_read == 0)
-        printf("faild to read program file.\n");
+        printf(">>> [ERROR] failed to read program file.\n");
     fclose(program_handle);
 
     // Platform
     ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
     if (ret != CL_SUCCESS) {
-        printf("failed to get platform ID.%d\n", (int)ret);
+        printf(">>> [ERROR] failed to get platform ID.%d\n", (int)ret);
         goto error;
     }
 
@@ -227,21 +231,21 @@ int main(int argc, char * argv[]) {
         ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_CPU, 1, &device_id, NULL);
     }
     if (ret != CL_SUCCESS) {
-        printf("failed to get device ID.%d\n", (int)ret);
+        printf(">>> [ERROR] failed to get device ID.%d\n", (int)ret);
         goto error;
     }
 
     // Context
     context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
     if (ret != CL_SUCCESS) {
-        printf("failed to create OpenCL context.%d\n", (int)ret);
+        printf(">>> [ERROR] failed to create OpenCL context.%d\n", (int)ret);
         goto error;
     }
 
     // Command queue
     command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
     if (ret != CL_SUCCESS) {
-        printf("failed to create command queue.%d\n", (int)ret);
+        printf(">>> [ERROR] failed to create command queue.%d\n", (int)ret);
         goto error;
     }
 
@@ -252,33 +256,33 @@ int main(int argc, char * argv[]) {
     ret = clEnqueueWriteBuffer(command_queue, a_h_buff, CL_TRUE, 0, data_size, (void *)a_h, 0, NULL, NULL);
     ret |= clEnqueueWriteBuffer(command_queue, a_from_d_buff, CL_TRUE, 0, data_size, (void *)a_from_d, 0, NULL, NULL);
     if (ret != CL_SUCCESS) {
-        printf("failed to copy data from host to device.\n");
+        printf(">>> [ERROR] failed to copy data from host to device.\n");
         goto error;
     }
 
     // Create kernel program from source
     program = clCreateProgramWithSource(context, 1, (const char **)&program_buffer,
           (const size_t *)&program_size, &ret);
-    printf("%s\n", program_buffer);
+    //printf("%s\n", program_buffer);
     if (ret != CL_SUCCESS) {
-        printf("failed to create OpenCL program from source.%d\n", (int)ret);
+        printf(">>> [ERROR] failed to create OpenCL program from source.%d\n", (int)ret);
         goto error;
     }
 
     // Build kernel program
     ret = clBuildProgram(program, 1, &device_id, cl_program_build_options, NULL, NULL);
     if (ret != CL_SUCCESS) {
-        fprintf(stderr, "failed to build program.%d\n", (int)ret);
+        fprintf(stderr, ">>> [ERROR] failed to build program.%d\n", (int)ret);
         char build_log[16348];
         clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(build_log), build_log, NULL);
-        printf("Error in kernel: %s\n", build_log);
+        printf(">>> [ERROR] Error in kernel: %s\n", build_log);
         goto error;
     }
 
     // Create OpenCL kernel
     kernel = clCreateKernel(program, kernel_func, &ret);
     if (ret != CL_SUCCESS) {
-        printf("failed to create kernel.%d\n", (int)ret);
+        printf(">>> [ERROR] failed to create kernel.%d\n", (int)ret);
         goto error;
     }
 
@@ -287,11 +291,11 @@ int main(int argc, char * argv[]) {
     ret |= clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *) &a_h_buff);
     ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *) &a_from_d_buff);
     if (ret != CL_SUCCESS) {
-        printf("failed to set kernel arguments.%d\n", (int)ret);
+        printf(">>> [ERROR] failed to set kernel arguments.%d\n", (int)ret);
         goto error;
     }
 
-    printf(">>> global_work_size[%d]: { %d, %d, %d }\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
+    printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", ndim, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
     int global_size = (int) global_work_size[0] * (int) global_work_size[1] * (int) global_work_size[2];
     int task_size = heightA * widthA;
     if (global_size < task_size) {
@@ -299,7 +303,7 @@ int main(int argc, char * argv[]) {
     }
 
     /* gpu copy */
-    printf(">>> %d times %s.%s starting...\n", run_num, program_file, kernel_func);
+    printf(">>> [INFO] %d times %s.%s starting...\n", run_num, program_file, kernel_func);
     double sum_duration = 0.0;
     for (int ridx = 0; ridx < (run_num+1); ridx++) { 
         gettimeofday(&start, NULL);
@@ -311,7 +315,7 @@ int main(int argc, char * argv[]) {
         duration = ((double)(end.tv_sec-start.tv_sec) + 
                 (double)(end.tv_usec-start.tv_usec)/1000000);
         if (ridx == 0) {
-            printf(">>> [NOTE] skip first time.\n");
+            printf(">>> [INFO] skip first time.\n");
             continue;
         }
         sum_duration += duration;
@@ -320,15 +324,15 @@ int main(int argc, char * argv[]) {
     gflops = gflops / duration * 1.0e-6;
     duration = sum_duration / (double)run_num;
     gbps = 2.0 * heightA * widthA * sizeof(ELEM_TYPE) / (1024*1024*1024) / duration;
-    printf(">>> %s %d x %d %2.6lf s %2.6lf MFLOPS %s\n\n", OPENCL_DEVICE_TYPE, heightA, widthA, duration, gflops, program_file);
-    printf(">>> bandwidth: %.2f GB/s\n", gbps);
+    printf(">>> [INFO] %s %d x %d %2.6lf s %2.6lf MFLOPS %s\n\n", OPENCL_DEVICE_TYPE, heightA, widthA, duration, gflops, program_file);
+    printf(">>> [INFO] bandwidth: %.2f GB/s\n", gbps);
 
     // Copy the output result from device memory
 
     ret = clEnqueueReadBuffer(command_queue, a_from_d_buff, CL_TRUE, 0, data_size, (void *)a_from_d, 0, NULL, NULL);
     if (ret != CL_SUCCESS) {
 
-        printf("failed to copy data from device to host.%d\n", (int)ret);
+        printf(">>> [ERROR] failed to copy data from device to host.%d\n", (int)ret);
         goto error;
     }
     equal_vec(a_h, a_from_d, len);
