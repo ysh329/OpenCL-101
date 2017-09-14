@@ -5,12 +5,14 @@
 #include <sys/time.h>
 #include <math.h>
 
+/////////////// == CHANGE VAR TYPE == /////////////
 // CPU ELEMENT TYPE
 #define   ELEM_TYPE                     float
 #define   ELEM_TYPE_STR                 "float"
 // OPENCL ELEMENT TYPE
-#define   CL_ELEM_TYPE                  float4
-#define   CL_ELEM_TYPE_STR              "float4"
+#define   CL_ELEM_TYPE                  float2
+#define   CL_ELEM_TYPE_STR              "float2"
+///////////////////////////////////////////////////
 
 #define   ELEM_RAND_RANGE               (100)
 #define   ELEM_INIT_VALUE               (1)
@@ -57,26 +59,32 @@ int main(int argc, char * argv[]) {
 
     printf(">>> [INFO] ELEM_TYPE_STR: %s\n", ELEM_TYPE_STR);
     printf(">>> [INFO] CL_ELEM_TYPE_STR: %s\n", CL_ELEM_TYPE_STR);
-    if (strstr(ELEM_TYPE_STR, "int")!=NULL) {
+    if (strstr(ELEM_TYPE_STR, "short")!=NULL) {
+        short
+            *a_h = NULL,
+            *a_from_h = NULL,
+            *a_from_d = NULL;
+    }
+    else if (strstr(ELEM_TYPE_STR, "int")!=NULL) {
 
-    int 
-        *a_h = NULL,
-        *a_from_h = NULL,
-        *a_from_d = NULL;
+        int 
+            *a_h = NULL,
+            *a_from_h = NULL,
+            *a_from_d = NULL;
     }
     else if (strstr(ELEM_TYPE_STR, "float")!=NULL) {
 
-    float
-        *a_h = NULL,
-        *a_from_h = NULL,
-        *a_from_d = NULL;
+        float
+            *a_h = NULL,
+            *a_from_h = NULL,
+            *a_from_d = NULL;
     }
     else if (strstr(ELEM_TYPE_STR, "double")!=NULL) {
 
-    double
-        *a_h = NULL,
-        *a_from_h = NULL,
-        *a_from_d = NULL;
+        double
+            *a_h = NULL,
+            *a_from_h = NULL,
+            *a_from_d = NULL;
     }
     else {
         printf(">>> [ERROR] ELEM_TYPE_STR(%s) doesn't contain variable type\n", ELEM_TYPE_STR);
