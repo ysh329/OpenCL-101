@@ -17,7 +17,7 @@
 #define		MATRIX_TRANSPOSE_GPU_ENABLE
 
 #define 	ELEM_RAND_RANGE		  (100)
-//#define 	NOT_PRINT_FLAG
+#define 	NOT_PRINT_FLAG
 #define 	KERNEL_FUNC			    "matrixTranspose"
 #define   LOCAL_WORK_SIZE_P		NULL
 
@@ -77,7 +77,7 @@ int main(int argc, char * argv[]) {
 	widthAT = heightA;	
  
 	data_size = heightA * widthA * sizeof(float);
-    a       = (float *) malloc (data_size);
+  a = (float *) malloc (data_size);
 	a_T_cpu = (float *) malloc (data_size);
 	a_T_gpu = (float *) malloc (data_size);
 
@@ -88,7 +88,7 @@ int main(int argc, char * argv[]) {
     rand_mat(a, widthA*heightA, ELEM_RAND_RANGE);
 
 #ifndef NOT_PRINT_FLAG
-    print_mat(a, widthA, heightA);
+  print_mat(a, widthA, heightA);
 	printf("a^T_CPU:\n");
 #endif
 
@@ -168,45 +168,45 @@ int main(int argc, char * argv[]) {
 		goto error;
 	}
 
-    // Context
-    context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
-    if (ret != CL_SUCCESS) {
-        printf("failed to create OpenCL context.\n");
-        goto error;
-    }
-    command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
-    if (ret != CL_SUCCESS) {
-        printf("failed to create command queue.\n");
-        goto error;
-    }
-    // Memory Buffer
-    a_buff   = clCreateBuffer (context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
+  // Context
+  context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+  if (ret != CL_SUCCESS) {
+      printf("failed to create OpenCL context.\n");
+      goto error;
+  }
+  command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+  if (ret != CL_SUCCESS) {
+      printf("failed to create command queue.\n");
+      goto error;
+  }
+  // Memory Buffer
+  a_buff   = clCreateBuffer (context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
 	a_T_buff = clCreateBuffer (context, CL_MEM_WRITE_ONLY, data_size, NULL, &ret);
 
-    ret  = clEnqueueWriteBuffer (command_queue, a_buff,   CL_TRUE, 0, data_size, (void *)a,       0, NULL, NULL);
+  ret  = clEnqueueWriteBuffer (command_queue, a_buff,   CL_TRUE, 0, data_size, (void *)a,       0, NULL, NULL);
 	ret |= clEnqueueWriteBuffer (command_queue, a_T_buff, CL_TRUE, 0, data_size, (void *)a_T_gpu, 0, NULL, NULL);
-    if (ret != CL_SUCCESS) {
-        printf("failed to copy data from host to device.\n");
-        goto error;
-    }
+  if (ret != CL_SUCCESS) {
+      printf("failed to copy data from host to device.\n");
+      goto error;
+  }
 
-    // Create Kernel Program from source
-    program = clCreateProgramWithSource(context, 1, (const char **)&program_buffer,
-				(const size_t *)&program_size, &ret);
-    if (ret != CL_SUCCESS) {
-        printf("failed to create OpenCL program from source %d\n", (int)ret);
-        goto error;
-    }
+  // Create Kernel Program from source
+  program = clCreateProgramWithSource(context, 1, (const char **)&program_buffer,
+		(const size_t *)&program_size, &ret);
+  if (ret != CL_SUCCESS) {
+      printf("failed to create OpenCL program from source %d\n", (int)ret);
+      goto error;
+  }
 
-    // Build Kernel Program
-    ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
-    if (ret != CL_SUCCESS) {
+  // Build Kernel Program
+  ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+  if (ret != CL_SUCCESS) {
 		printf("failed to build program %d\n", (int) ret);
 		char build_log[16348];
 		clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(build_log), build_log, NULL);
 		printf("Error in kernel: %s\n", build_log);
 		goto error;
-    }
+  }
 		
 	// Create OpenCL kernel
 	kernel = clCreateKernel(program, KERNEL_FUNC, &ret);
@@ -219,7 +219,7 @@ int main(int argc, char * argv[]) {
 	ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), (void *) &widthA);
 	ret |= clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *) &a_buff);
 	ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *) &a_T_buff);
-    if (ret != CL_SUCCESS) {
+  if (ret != CL_SUCCESS) {
 		printf("failed to set kernel arguments %d\n", (int) ret);
 		goto error;
 	}
@@ -255,11 +255,11 @@ int main(int argc, char * argv[]) {
 		//clFinish(command_queue); == clWaitForEvents(1, &event);
 	}
 	gettimeofday(&end, NULL);
-    duration = ((double)(end.tv_sec-start.tv_sec)*1000000 + 
-        (double)(end.tv_usec-start.tv_usec)) / 1000000 / (double) run_num;
-    gflops = 1.0 * heightA * widthA;
-    gflops = gflops / duration * 1.0e-6;
-    printf("GPU %d x %d %2.6lf s %2.6lf MFLOPS %s\n\n", widthA, heightA, duration, gflops, program_file);
+  duration = ((double)(end.tv_sec-start.tv_sec)*1000000 + 
+      (double)(end.tv_usec-start.tv_usec)) / 1000000 / (double) run_num;
+  gflops = 1.0 * heightA * widthA;
+  gflops = gflops / duration * 1.0e-6;
+  printf("GPU %d x %d %2.6lf s %2.6lf MFLOPS %s\n\n", widthA, heightA, duration, gflops, program_file);
 	
 	// Copy the output matrix ( transposed matrix a_T_gpu ) result from the GPU memory ( a_T_buff )
 	ret = clEnqueueReadBuffer(command_queue, a_T_buff, CL_TRUE, 0, data_size, (void *)a_T_gpu, 0, NULL, NULL);
@@ -293,7 +293,7 @@ error:
 	clReleaseCommandQueue(command_queue);
 	clReleaseContext(context);
 	clReleaseProgram(program);
-    clReleaseKernel(kernel);
+  clReleaseKernel(kernel);
 
 	// Free the host memory objects
 	free(program_buffer);
@@ -303,6 +303,6 @@ error:
 	free(a_T_gpu);
 
 	// Exit
-    return 0;
+  return 0;
 }
 
