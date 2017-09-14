@@ -14,7 +14,7 @@ After build, you can execute binary file `./bandwidth` and append other paramete
 
 ```shell
 $ # usage: ./bandwidth HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUN_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]
-$ ./bandwidth 1024 1024 ./bandwidth_kernel.cl global_bandwidth_float_v1 100 $[1024*1024] 1 1 
+$ ./bandwidth 1024 1024 ./kernel.cl global_bandwidth_float_v1 100 $[1024*1024] 1 1 
 ============== CPU RESULT ==============
 >>> 100 times CPU starting...
 >>> CPU 1024 x 1024 0.001524 s 1376.282665 MFLOPS
