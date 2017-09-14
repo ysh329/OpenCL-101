@@ -99,7 +99,8 @@ int main(int argc, char * argv[]) {
         strcpy(kernel_func, argv[4]);
 
         if (strstr(kernel_func, ELEM_TYPE_STR)!=NULL) {
-            strcat(cl_program_build_options, ELEM_TYPE);
+            strcat(cl_program_build_options, ELEM_TYPE_STR);
+            printf(">>> [INFO] cl_program_build_options: %s\n", cl_program_build_options);
         }
         //else {
         //    printf(">>> [ERROR] fail to define cl_program_build_options, kernel_func(%s) doesn't contain ELEM_TYPE_STR(%s)\n", kernel_func, ELEM_TYPE_STR);
