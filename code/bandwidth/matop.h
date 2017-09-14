@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
-void init_mat(float *mat, int len, float setVal) {
+void init_mat(ELEM_TYPE *mat, int len, ELEM_TYPE setVal) {
     for (int idx = 0; idx < len; idx++)
         mat[idx] = (ELEM_TYPE)setVal;
 }
@@ -18,21 +19,21 @@ void rand_mat(float *mat, int len, int range) {
 }
 
 // row-major
-void print_mat(float *mat, int width, int height) {
+void print_mat(ELEM_TYPE *mat, int width, int height) {
 #ifdef NOT_PRINT_FLAG
     return;
 #endif
     for (int r = 0; r < height; r++) {
         for (int c = 0; c < width; c++)
-            printf("%.2f ", (ELEM_TYPE)mat[r*width+c]);
+                printf("%.2f ", (float)mat[r*width+c]);
         printf("\n");
     }
     printf("\n");
 }
 
-void print_vec(float *vec, int len) {
+void print_vec(ELEM_TYPE *vec, int len) {
     for (int idx = 0; idx < len; idx++)
-        printf("%.2f \n", (ELEM_TYPE)vec[idx]);
+        printf("%.2f \n", (float)vec[idx]);
 }
 
 // row-major
