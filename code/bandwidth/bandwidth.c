@@ -5,7 +5,9 @@
 #include <sys/time.h>
 #include <math.h>
 
-#define   ELEM_TYPE                     int
+#define   ELEM_TYPE_STR                 "float"
+#define   ELEM_TYPE                     float
+
 #define   ELEM_RAND_RANGE               (100)
 #define   ELEM_INIT_VALUE               (1)
 
@@ -44,11 +46,38 @@ int main(int argc, char * argv[]) {
       data_size,
       global_work_size[3] = {1,1,1};
 
+    void *a_h = NULL;
+    void *a_from_h = NULL;
+    void *a_from_d = NULL;
+
+    printf(">>> [INFO] ELEM_TYPE_STR: %s\n", ELEM_TYPE_STR);
+    if (strstr(ELEM_TYPE_STR, "int")!=NULL) {
+    int 
+        *a_h = NULL,
+        *a_from_h = NULL,
+        *a_from_d = NULL;
+    }
+    else if (strstr(ELEM_TYPE_STR, "float")!=NULL) {
+    float
+        *a_h = NULL,
+        *a_from_h = NULL,
+        *a_from_d = NULL;
+    }
+    else if (strstr(ELEM_TYPE_STR, "double")!=NULL) {
+    double
+        *a_h = NULL,
+        *a_from_h = NULL,
+        *a_from_d = NULL;
+    }
+    else {
+        printf(">>> [ERROR] ELEM_TYPE_STR(%s) doesn't contain variable type\n", ELEM_TYPE_STR);
+        exit(-1);
+    }
+
     char
       program_file[KERNEL_FILE_AND_FUNC_MAX_LEN] = "",
       kernel_func[KERNEL_FILE_AND_FUNC_MAX_LEN] = "",
       cl_program_build_options[KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D ELEM_TYPE=";
-      strcat(cl_program_build_options, ELEM_TYPE);
 
     if (argc == 9) {
         /*********************************
@@ -68,6 +97,15 @@ int main(int argc, char * argv[]) {
         widthA = atoi( argv[2] );
         strcpy(program_file, argv[3]);
         strcpy(kernel_func, argv[4]);
+
+        if (strstr(kernel_func, ELEM_TYPE_STR)!=NULL) {
+            strcat(cl_program_build_options, ELEM_TYPE);
+        }
+        //else {
+        //    printf(">>> [ERROR] fail to define cl_program_build_options, kernel_func(%s) doesn't contain ELEM_TYPE_STR(%s)\n", kernel_func, ELEM_TYPE_STR);
+        //    exit(-1);
+        //}
+
         //printf("program_file:%s\n", program_file);
         //printf("argv[3]:%s\n\n", argv[3]);
         //printf("kernel_func:%s\n", kernel_func);
@@ -78,18 +116,15 @@ int main(int argc, char * argv[]) {
         global_work_size[2] = atoi( argv[8] );
     }
     else {
-        printf("usage: %s HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUN_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
+        printf(">>> [INFO] %s HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUN_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
+        printf(">>> [INFO] Note: KERNEL_FUNC(%s) must contain varible type and prefix (`global_bandwidth`) is required, such as global_bandwidth_float_v1\n", kernel_func);
         exit(-1);
     }
 
-    ELEM_TYPE
-      *a_h,
-      *a_from_h,
-      *a_from_d;
-
     len = heightA * widthA;
-    data_size = len * sizeof( ELEM_TYPE );
 
+
+    data_size = len * sizeof( ELEM_TYPE );
     a_h = (ELEM_TYPE *) malloc (data_size);
     a_from_h = (ELEM_TYPE *) malloc (data_size);
     a_from_d = (ELEM_TYPE *) malloc (data_size);
@@ -223,6 +258,7 @@ int main(int argc, char * argv[]) {
     // Create kernel program from source
     program = clCreateProgramWithSource(context, 1, (const char **)&program_buffer,
           (const size_t *)&program_size, &ret);
+    printf("%s\n", program_buffer);
     if (ret != CL_SUCCESS) {
         printf("failed to create OpenCL program from source.%d\n", (int)ret);
         goto error;
