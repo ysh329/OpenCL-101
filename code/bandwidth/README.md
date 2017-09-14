@@ -49,6 +49,7 @@ python benchmark.py
 
 
 ## TODO
+- [ ] Bug of floatN support: fail to copy data from device to host;
 - [ ] Support to monitor and set GPU, CPU frequency max;
 - [ ] Support halfN precision;
 - [ ] Support variable-type input from command line: 1. from cmd line to bandwidth.c; 2. from host to device (cl_program_build_options).
