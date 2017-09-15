@@ -9,7 +9,7 @@ If you want to measure `bandwidth` of `float` type for cpu and gpu, you should c
 ```c
 // CPU TYPE
 #define   ELEM_TYPE                     float
-#define   ELEM_TYPE                     "float"
+#define   ELEM_TYPE_STR                 "float"
 // GPU TYPE
 #define   CL_ELEM_TYPE                  float
 #define   CL_ELEM_TYPE_STR              "float"
