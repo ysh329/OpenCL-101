@@ -4,6 +4,18 @@ Compute bandwidth for GPU and CPU at different matrix sizes.
 
 ## Build
 
+If you want to measure `bandwidth` of `float` type for cpu and gpu, you should change these lines as bellow in `bandwidth.c` before build:
+
+```c
+// CPU TYPE
+#define   ELEM_TYPE                     float
+#define   ELEM_TYPE                     "float"
+// GPU TYPE
+#define   CL_ELEM_TYPE                  float
+#define   CL_ELEM_TYPE_STR              "float"
+```
+After change, you can build `bandwidth.c` using following command:
+
 ```shell
 ./make.sh
 ```
@@ -14,29 +26,30 @@ After build, you can execute binary file `./bandwidth` and append other paramete
 
 ```shell
 $ # usage: ./bandwidth HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUN_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]
-$ ./bandwidth 1024 1024 ./kernel.cl global_bandwidth_float_v1 100 $[1024*1024] 1 1 
+$ ./bandwidth 1024 1024 ./kernel.cl global_bandwidth_vec1 1 $[1024*1024] 1 1
+>>> [INFO] ELEM_TYPE_STR: float
+>>> [INFO] CL_ELEM_TYPE_STR: float
+>>> [INFO] cl_program_build_options: -D CL_ELEM_TYPE=float
 ============== CPU RESULT ==============
->>> 100 times CPU starting...
->>> CPU 1024 x 1024 0.001524 s 1376.282665 MFLOPS
+>>> [INFO] 1 times CPU starting...
+>>> [INFO] CPU 1024 x 1024 0.001900 s 1103.764211 MFLOPS
 
->>> bandwidth: 5.13 GB/s
->>> correct rate: 1.0000
->>> ~ Bingo ~ matrix a == matrix b
+>>> [INFO] bandwidth: 4.11 GB/s
+>>> [TEST] correct rate: 1.0000
+>>> [TEST] ~ Bingo ~ matrix a == matrix b
 
 ============== GPU RESULT ==============
 Mali-T86x MP4 r2p0 0x0860
->>> program_file: ./bandwidth_kernel.cl
->>> kernel_func: global_bandwidth_float_v1
->>> global_work_size[3]: { 1048576, 1, 1 }
+>>> [INFO]program_file: ./kernel.cl
+>>> [INFO] kernel_func: global_bandwidth_vec1
+>>> [INFO] global_work_size[3]: { 1048576, 1, 1 }
+>>> [INFO] 1 times ./kernel.cl.global_bandwidth_vec1 starting...
+>>> [INFO] skip first time.
+>>> [INFO] CL_GPU 1024 x 1024 0.002527 s 829.897903 MFLOPS ./kernel.cl
 
->>> 100 times ./bandwidth_kernel.cl.global_bandwidth_float_v1 starting...
->>> [NOTE] skip first time.
->>> CL_GPU 1024 x 1024 0.002519 s 425.731222 MFLOPS ./bandwidth_kernel.cl
-
->>> bandwidth: 3.10 GB/s
->>> correct rate: 1.0000
->>> ~ Bingo ~ matrix a == matrix b
-
+>>> [INFO] bandwidth: 3.09 GB/s
+>>> [TEST] correct rate: 1.0000
+>>> [TEST] ~ Bingo ~ matrix a == matrix b
 ```
 
 ## Test
