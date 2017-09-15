@@ -47,10 +47,23 @@ This test script executes `./bandwidth` many times to test different matrix size
 python benchmark.py
 ```
 
+## Monitor
 
-## TODO
-- [ ] Bug of floatN support: fail to copy data from device to host;
-- [ ] Support to short type;
-- [ ] Support to monitor and set GPU, CPU frequency max;
-- [ ] Support halfN precision;
-- [ ] Support variable-type input from command line: 1. from cmd line to bandwidth.c; 2. from host to device (cl_program_build_options).
+monitor cpu frequency:
+```shell
+sudo cpufreq-aperf
+```
+
+If your CPU doesn't support measure, it will output `CPU doesn't support APERF/MPERF`. Otherwise, it'll output similar as below:
+
+```shell
+ CPU  Average freq(KHz) Time in C0  Time in Cx  C0 percentage
+ 000  4420000     00 sec 105 ms 00 sec 894 ms 10
+ 001  4318000     00 sec 123 ms 00 sec 876 ms 12
+ 002  4046000     00 sec 186 ms 00 sec 813 ms 18
+ 003  4250000     00 sec 020 ms 00 sec 979 ms 02
+ 004  4454000     00 sec 053 ms 00 sec 946 ms 05
+ 005  4522000     00 sec 141 ms 00 sec 858 ms 14
+ 006  4352000     00 sec 082 ms 00 sec 917 ms 08
+ 007  4556000     00 sec 247 ms 00 sec 752 ms 24
+```
