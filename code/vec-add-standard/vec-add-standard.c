@@ -12,8 +12,10 @@
 #include <CL/cl.h>
 #endif
 
-#define 	MEM_SIZE 			(128)
+#define 	MEM_SIZE                (128)
 #define 	MAX_SOURCE_SIZE 	(0x100000)
+#define         PRINT_LINE(title)       printf("\n========== %s ==========\n", title);
+
 
 void init_vec(int *vec, int len, int set_one_flag) {
     for (int i = 0; i < len; i++) {
@@ -68,6 +70,7 @@ int main(void) {
 	c_d = (int *) malloc (len * sizeof(int));
 	size_t data_size = len * sizeof(int);
 
+        PRINT_LINE("INIT VALUE");
 	/* vector addition, cpu version */
 	printf("a: ");
 	init_vec(a, len, 1);
@@ -208,11 +211,13 @@ int main(void) {
 	}
 
 	/* Display Result */
-	printf("c: ");
+        PRINT_LINE("CHECK RESULT cpu-verison && gpu-version");
+	printf("c_d: ");
 	print_vec(c_d, len);
 	check_result(c, c_d, len);
 	printf("len-1=%d, c_d[%d]==c[%d]: %d, c_d[%d]=%d, c[%d]=%d \n", len-1, len-1, len-1, c_d[len-1]==c[len-1], len-1, c_d[len-1], len-1, c[len-1]);
 
+        PRINT_LINE("CHECK RESULT ELEMENT BY ELEMENT");
 	printf("idx  c  c_d\n");
 	for(int i = 0; i < len; i++) {
 		printf("%2d %2d %2d \n", i, c[i], c_d[i]);
