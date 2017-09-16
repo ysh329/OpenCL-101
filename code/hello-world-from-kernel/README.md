@@ -1,6 +1,6 @@
 # hello-world-from-kernel
 
-First OpenCL Program in The OpenCL Programming Book - Fixstars, a Software Company Devoted to "Speed up your Business"](https://www.fixstars.com/en/opencl/book/OpenCLProgrammingBook/first-opencl-program/).
+First OpenCL Program in [The OpenCL Programming Book - Fixstars, a Software Company Devoted to "Speed up your Business"](https://www.fixstars.com/en/opencl/book/OpenCLProgrammingBook/first-opencl-program/).
 
 ## Build
 
