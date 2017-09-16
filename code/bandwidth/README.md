@@ -22,7 +22,19 @@ After change, you can build `bandwidth.c` using following command:
 
 ## Usage
 
-After build, you can execute binary file `./bandwidth` and append other parameters as below: 
+After build, you can execute binary file `./bandwidth` and append other parameters as below:
+
+
+
+```shell
+$ # measure float-type bandiwdth of 2048*2048 size
+$ ./bandwidth 2048 2048 ./kernel.cl global_bandwidth_vec1 10 $[2048*2048] 1 1
+
+$ # measure float2-type bandiwith of 2048*2048 size
+$ ./bandwidth 2048 2048 ./kernel.cl global_bandwidth_vec2 10 $[2048*2048/2] 1 1
+``` 
+
+The execution logs of float-type bandwith of 2048*2048 size.
 
 ```shell
 $ # usage: ./bandwidth HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUN_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]
@@ -62,6 +74,9 @@ python benchmark.py
 
 ## Monitor
 
+
+### CPU
+
 monitor cpu frequency:
 ```shell
 sudo cpufreq-aperf
@@ -79,4 +94,10 @@ If your CPU doesn't support measure, it will output `CPU doesn't support APERF/M
  005  4522000     00 sec 141 ms 00 sec 858 ms 14
  006  4352000     00 sec 082 ms 00 sec 917 ms 08
  007  4556000     00 sec 247 ms 00 sec 752 ms 24
+```
+
+### GPU
+
+```shell
+/sys/class/misc/mali0/device/devfreq/ff9a0000.gpu
 ```
