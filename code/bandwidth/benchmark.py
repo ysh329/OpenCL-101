@@ -10,8 +10,8 @@ def init():
 
     bandwidth_bin = "./bandwidth"
     size_list = map(lambda n: 2**n, xrange(4, 12))
-    kernel_file_path = "bandwidth_kernel.cl"
-    kernel_func_list = ["global_bandwidth_float_v4"]
+    kernel_file_path = "kernel.cl"
+    kernel_func_list = ["global_bandwidth_vec4"]
     run_num = 100
     global_work_size_list = []
 
@@ -20,7 +20,7 @@ def create_cmd():
     global cmd_list
     cmd_list = []
     import re
-    vec_degree_pattern = "global_bandwidth.*_v(.*)"
+    vec_degree_pattern = "global_bandwidth_vec(.*)"
 
     for func_idx in xrange(len(kernel_func_list)):
         kernel_func = kernel_func_list[func_idx]
@@ -45,4 +45,4 @@ def run_cmd():
 if __name__ == "__main__":
     init()
     create_cmd()
-    run_cmd()
+    #run_cmd()
