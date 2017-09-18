@@ -1,3 +1,7 @@
+// If use this .h file,
+// YOU should define ELEM_TYPE
+// MACRO in your CPP file.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
