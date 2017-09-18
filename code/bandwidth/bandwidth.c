@@ -10,8 +10,8 @@
 #define   ELEM_TYPE                     float
 #define   ELEM_TYPE_STR                 "float"
 // OPENCL ELEMENT TYPE
-#define   CL_ELEM_TYPE                  float2
-#define   CL_ELEM_TYPE_STR              "float2"
+#define   CL_ELEM_TYPE                  float
+#define   CL_ELEM_TYPE_STR              "float"
 ///////////////////////////////////////////////////
 
 #define   ELEM_RAND_RANGE               (100)
@@ -129,7 +129,7 @@ int main(int argc, char * argv[]) {
         global_work_size[2] = atoi( argv[8] );
     }
     else {
-        printf(">>> [INFO] %s HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUN_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
+        printf(">>> [Usage] %s HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUN_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
         printf(">>> [INFO] Note: KERNEL_FUNC(%s) must contain varible type and prefix (`global_bandwidth`) is required, such as global_bandwidth_float_v1\n", kernel_func);
         exit(-1);
     }
@@ -336,13 +336,13 @@ int main(int argc, char * argv[]) {
     printf(">>> [INFO] bandwidth: %.2f GB/s\n", gbps);
 
     // Copy the output result from device memory
-
     ret = clEnqueueReadBuffer(command_queue, a_from_d_buff, CL_TRUE, 0, data_size, (void *)a_from_d, 0, NULL, NULL);
     if (ret != CL_SUCCESS) {
 
         printf(">>> [ERROR] failed to copy data from device to host.%d\n", (int)ret);
         goto error;
     }
+
     equal_vec(a_h, a_from_d, len);
 
 #ifndef NOT_PRINT_FLAG
