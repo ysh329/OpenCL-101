@@ -21,7 +21,7 @@ int main () {
     int *c = NULL;
 
     /* element numbers of each array */
-    const int num_elements = 2048;
+    const int num_elements = 10;
 
     /* array size */
     size_t data_size = sizeof (int) * num_elements;
@@ -35,12 +35,15 @@ int main () {
     for (int i = 0; i < num_elements; i++) {
         a[i] = i;
         b[i] = i;
+        c[i] = a[i] + b[i];
     }
+    for (int i = 0; i < num_elements; i++)
+        printf("%d ", c[i]);
 
     /* get platform number of OpenCL */
     cl_uint  num_platforms = 0;
     clGetPlatformIDs (0, NULL, &num_platforms);
-    printf("num_platforms: %d\n", num_platforms);
+    printf("num_platforms: %d\n", (int)num_platforms);
 
     /* allocate a segment of mem space, so as to store supported platform info */
     cl_platform_id *platforms = (cl_platform_id *) malloc (num_platforms * sizeof (cl_platform_id));
@@ -100,6 +103,10 @@ int main () {
 
     /* copy `buffer_c` to `c` in host */
     clEnqueueReadBuffer (cmd_queue, buffer_c, CL_TRUE, 0, data_size, c, 0, NULL, NULL);
+    
+    for (int i = 0; i < num_elements; i++) {
+        printf("%d ", c[i]);
+    }
 
     /* verify result */
     for (int i = 0; i < num_elements; i++) {
