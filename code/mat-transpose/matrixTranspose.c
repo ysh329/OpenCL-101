@@ -16,10 +16,10 @@
 #define		MATRIX_TRANSPOSE_CPU_ENABLE
 #define		MATRIX_TRANSPOSE_GPU_ENABLE
 
-#define 	ELEM_RAND_RANGE		  (100)
+#define 	ELEM_RAND_RANGE			(100)
 #define 	NOT_PRINT_FLAG
-#define 	KERNEL_FUNC			    "matrixTranspose"
-#define   LOCAL_WORK_SIZE_P		NULL
+#define 	KERNEL_FUNC			"matrixTranspose"
+#define		LOCAL_WORK_SIZE_P		NULL
 
 #include "matop.h"
 
