@@ -1,3 +1,5 @@
+//#include <arm_fp16.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,12 +8,12 @@
 #include <math.h>
 
 /////////////// == CHANGE VAR TYPE == /////////////
-// CPU ELEMENT TYPE
-#define   ELEM_TYPE                     float
-#define   ELEM_TYPE_STR                 "float"
-// OPENCL ELEMENT TYPE
-#define   CL_ELEM_TYPE                  float
-#define   CL_ELEM_TYPE_STR              "float"
+// CPU ELEMENT TYPE: int, float, __fp16, double
+#define   ELEM_TYPE                     __fp16
+#define   ELEM_TYPE_STR                 "__fp16"
+// OPENCL ELEMENT TYPE: int, intN, float, floatN, double, doubleN, cl_half, cl_halfN
+#define   CL_ELEM_TYPE                  half2
+#define   CL_ELEM_TYPE_STR              "half2"
 ///////////////////////////////////////////////////
 
 #define   ELEM_RAND_RANGE               (100)
@@ -20,7 +22,7 @@
 #define   PRINT_LINE(title)             printf("============== %s ==============\n", title)
 
 #define   BANDWIDTH_CPU_ENABLE
-#define   BANDWIDTH_GPU_ENABLE
+//#define   BANDWIDTH_GPU_ENABLE
 #define   OPENCL_DEVICE_TYPE            "CL_GPU" 
 //'CL_GPU' or "CL_CPU"
 #define   LOCAL_WORK_SIZE_POINTER       NULL
@@ -35,7 +37,7 @@
 #include <CL/cl.h>
 #endif
 
-#include "matop.h"
+#include "../common/matop.h"
 
 int main(int argc, char * argv[]) {
     struct timeval start, end;
@@ -82,6 +84,12 @@ int main(int argc, char * argv[]) {
     else if (strstr(ELEM_TYPE_STR, "double")!=NULL) {
 
         double
+            *a_h = NULL,
+            *a_from_h = NULL,
+            *a_from_d = NULL;
+    }
+    else if (strstr(ELEM_TYPE_STR, "fp16")!=NULL) {
+        ELEM_TYPE
             *a_h = NULL,
             *a_from_h = NULL,
             *a_from_d = NULL;
