@@ -12,7 +12,7 @@ void init_mat(ELEM_TYPE *mat, int len, ELEM_TYPE setVal) {
         mat[idx] = (ELEM_TYPE)setVal;
 }
 
-void rand_mat(float *mat, int len, int range) {
+void rand_mat(ELEM_TYPE *mat, int len, int range) {
     if (range < 1) {
         printf("range value can't be less than 1.\n");
         exit(-1);
