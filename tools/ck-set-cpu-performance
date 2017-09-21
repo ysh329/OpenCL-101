@@ -1,0 +1,17 @@
+#! /bin/bash
+
+#
+# Collective Knowledge (CK)
+#
+# See CK LICENSE.txt for licensing details.
+# See CK COPYRIGHT.txt for copyright details.
+#
+# Developer: Grigori Fursin
+#
+
+export CK_CPU_FREQ_GOVERNOR=performance
+export CK_CPU_FREQ_FILE=cpuinfo_max_freq
+export CK_CPU_ONLINE=1
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+. ck-set-cpu-online-and-frequency

@@ -1,0 +1,36 @@
+#! /bin/bash
+#
+# Collective Knowledge (CK)
+#
+# See CK LICENSE.txt for licensing details.
+# See CK COPYRIGHT.txt for copyright details.
+#
+# Developer: Grigori Fursin (info provided by Anton Lokhmotov)
+#
+
+echo "*** Current GPU frequency:"
+cur_freq=`cat /sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/cur_freq`
+echo $cur_freq
+echo "*** Min frequency:"
+all_freq=(`cat /sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/available_frequencies`)
+echo ${all_freq[0]} 
+
+echo "*** Max frequency:"
+len=${#all_freq[@]} 
+((len=len-1))
+echo ${all_freq[${len}]} 
+
+
+
+echo "*** Available GPU frequencies:"
+all=`cat /sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/available_frequencies`
+echo $all
+
+
+echo "*** Current GPU governor:"
+cur_gov=`cat /sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/governor`
+echo $cur_gov
+
+echo "*** Available GPU governor:"
+gall=`cat /sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/available_governors`
+echo $gall
