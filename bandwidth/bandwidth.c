@@ -1,4 +1,3 @@
-//#include <arm_fp16.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,8 +11,8 @@
 #define   ELEM_TYPE                     __fp16
 #define   ELEM_TYPE_STR                 "__fp16"
 // OPENCL ELEMENT TYPE: int, intN, float, floatN, double, doubleN, cl_half, cl_halfN
-#define   CL_ELEM_TYPE                  half2
-#define   CL_ELEM_TYPE_STR              "half2"
+#define   CL_ELEM_TYPE                  half
+#define   CL_ELEM_TYPE_STR              "half"
 ///////////////////////////////////////////////////
 
 #define   ELEM_RAND_RANGE               (100)
@@ -22,9 +21,9 @@
 #define   PRINT_LINE(title)             printf("============== %s ==============\n", title)
 
 #define   BANDWIDTH_CPU_ENABLE
-//#define   BANDWIDTH_GPU_ENABLE
+#define   BANDWIDTH_GPU_ENABLE
+// OpenCL Device Type: 'CL_GPU' or "CL_CPU"
 #define   OPENCL_DEVICE_TYPE            "CL_GPU" 
-//'CL_GPU' or "CL_CPU"
 #define   LOCAL_WORK_SIZE_POINTER       NULL
 #define   KERNEL_FILE_AND_FUNC_MAX_LEN  (100)
 
@@ -34,6 +33,7 @@
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
+//#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #include <CL/cl.h>
 #endif
 
@@ -59,8 +59,13 @@ int main(int argc, char * argv[]) {
         *a_from_h = NULL,
         *a_from_d = NULL;
 
-    printf(">>> [INFO] ELEM_TYPE_STR: %s\n", ELEM_TYPE_STR);
-    printf(">>> [INFO] CL_ELEM_TYPE_STR: %s\n", CL_ELEM_TYPE_STR);
+    printf(">>> [INFO] ELEM_TYPE_STR: %s, %d\n", ELEM_TYPE_STR, (int)sizeof(ELEM_TYPE));
+    printf(">>> [INFO] CL_ELEM_TYPE_STR: %s, %d\n", CL_ELEM_TYPE_STR, (int)sizeof(CL_ELEM_TYPE));
+
+    if (sizeof(ELEM_TYPE) != sizeof(CL_ELEM_TYPE)) {
+        printf(">>> [WARN] ELEM_TYPE(%s) differs from CL_ELEM_TYPE(%s), data_size, too!\n", ELEM_TYPE_STR, CL_ELEM_TYPE_STR);
+    }
+
     if (strstr(ELEM_TYPE_STR, "short")!=NULL) {
         short
             *a_h = NULL,
@@ -149,6 +154,8 @@ int main(int argc, char * argv[]) {
     a_h = (ELEM_TYPE *) malloc (data_size);
     a_from_h = (ELEM_TYPE *) malloc (data_size);
     a_from_d = (ELEM_TYPE *) malloc (data_size);
+
+    printf("len: %d, data_size: %d, a_h: %d a_h+1: %d \n", len, (int)data_size, a_h, (a_h+1));
 
     rand_mat(a_h, len, ELEM_RAND_RANGE);
     init_mat(a_from_h, len, ELEM_INIT_VALUE);
