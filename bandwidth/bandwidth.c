@@ -6,13 +6,22 @@
 #include <sys/time.h>
 #include <math.h>
 
+/* OpenCL */
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+//#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#include <CL/cl.h>
+#endif
+
 /////////////// == CHANGE VAR TYPE == /////////////
 // CPU ELEMENT TYPE: int, float, __fp16, double
 #define   ELEM_TYPE                     __fp16
 #define   ELEM_TYPE_STR                 "__fp16"
 // OPENCL ELEMENT TYPE: int, intN, float, floatN, double, doubleN, cl_half, cl_halfN
-#define   CL_ELEM_TYPE                  half
-#define   CL_ELEM_TYPE_STR              "half"
+#define   CL_ELEM_TYPE                  cl_half //cl_float2, note: cl_half is allowed in host, cl_halfN not
+// CL_ELEM_TYPE_STR: macro define for CL kernel
+#define   CL_ELEM_TYPE_STR              "half2" // float2
 ///////////////////////////////////////////////////
 
 #define   ELEM_RAND_RANGE               (100)
@@ -28,14 +37,6 @@
 #define   KERNEL_FILE_AND_FUNC_MAX_LEN  (100)
 
 #define   NOT_PRINT_FLAG
-
-/* OpenCL */
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-//#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-#include <CL/cl.h>
-#endif
 
 #include "../common/matop.h"
 
@@ -59,8 +60,8 @@ int main(int argc, char * argv[]) {
         *a_from_h = NULL,
         *a_from_d = NULL;
 
-    printf(">>> [INFO] ELEM_TYPE_STR: %s, %d\n", ELEM_TYPE_STR, (int)sizeof(ELEM_TYPE));
-    printf(">>> [INFO] CL_ELEM_TYPE_STR: %s, %d\n", CL_ELEM_TYPE_STR, (int)sizeof(CL_ELEM_TYPE));
+    printf(">>> [INFO] ELEM_TYPE_STR: %s, sizeof(ELEM_TYPE): %d\n", ELEM_TYPE_STR, (int)sizeof(ELEM_TYPE));
+    printf(">>> [INFO] CL_ELEM_TYPE_STR: %s, sizeof(CL_ELEM_TYPE): %d\n", CL_ELEM_TYPE_STR, (int)sizeof(CL_ELEM_TYPE));
 
     if (sizeof(ELEM_TYPE) != sizeof(CL_ELEM_TYPE)) {
         printf(">>> [WARN] ELEM_TYPE(%s) differs from CL_ELEM_TYPE(%s), data_size, too!\n", ELEM_TYPE_STR, CL_ELEM_TYPE_STR);
