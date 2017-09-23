@@ -156,7 +156,7 @@ int main(int argc, char * argv[]) {
     a_from_h = (ELEM_TYPE *) malloc (data_size);
     a_from_d = (ELEM_TYPE *) malloc (data_size);
 
-    printf("len: %d, data_size: %d, a_h: %d a_h+1: %d \n", len, (int)data_size, a_h, (a_h+1));
+    printf("len: %d, data_size: %d, a_h: %p a_h+1: %p \n", len, (int)data_size, a_h, (a_h+1));
 
     rand_mat(a_h, len, ELEM_RAND_RANGE);
     init_mat(a_from_h, len, ELEM_INIT_VALUE);
