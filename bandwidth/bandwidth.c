@@ -16,12 +16,12 @@
 
 /////////////// == CHANGE VAR TYPE == /////////////
 // CPU ELEMENT TYPE: int, float, __fp16, double
-#define   ELEM_TYPE                     __fp16
-#define   ELEM_TYPE_STR                 "__fp16"
+#define   ELEM_TYPE                     int
+#define   ELEM_TYPE_STR                 "int"
 // OPENCL ELEMENT TYPE: int, intN, float, floatN, double, doubleN, cl_half, cl_halfN
-#define   CL_ELEM_TYPE                  cl_half //cl_float2, note: cl_half is allowed in host, cl_halfN not
+#define   CL_ELEM_TYPE                  cl_int //cl_float2, note: cl_half is allowed in host, cl_halfN not
 // CL_ELEM_TYPE_STR: macro define for CL kernel
-#define   CL_ELEM_TYPE_STR              "half2" // float2
+#define   CL_ELEM_TYPE_STR              "int16" // float2
 ///////////////////////////////////////////////////
 
 #define   ELEM_RAND_RANGE               (100)
@@ -31,6 +31,7 @@
 
 #define   BANDWIDTH_CPU_ENABLE
 #define   BANDWIDTH_GPU_ENABLE
+
 // OpenCL Device Type: 'CL_GPU' or "CL_CPU"
 #define   OPENCL_DEVICE_TYPE            "CL_GPU" 
 #define   LOCAL_WORK_SIZE_POINTER       NULL
@@ -55,54 +56,16 @@ int main(int argc, char * argv[]) {
         data_size,
         global_work_size[3] = {1,1,1};
     
-    void
+    ELEM_TYPE
         *a_h = NULL,
         *a_from_h = NULL,
         *a_from_d = NULL;
-
+    PRINT_LINE("INIT");
     printf(">>> [INFO] ELEM_TYPE_STR: %s, sizeof(ELEM_TYPE): %d\n", ELEM_TYPE_STR, (int)sizeof(ELEM_TYPE));
     printf(">>> [INFO] CL_ELEM_TYPE_STR: %s, sizeof(CL_ELEM_TYPE): %d\n", CL_ELEM_TYPE_STR, (int)sizeof(CL_ELEM_TYPE));
 
     if (sizeof(ELEM_TYPE) != sizeof(CL_ELEM_TYPE)) {
         printf(">>> [WARN] ELEM_TYPE(%s) differs from CL_ELEM_TYPE(%s), data_size, too!\n", ELEM_TYPE_STR, CL_ELEM_TYPE_STR);
-    }
-
-    if (strstr(ELEM_TYPE_STR, "short")!=NULL) {
-        short
-            *a_h = NULL,
-            *a_from_h = NULL,
-            *a_from_d = NULL;
-    }
-    else if (strstr(ELEM_TYPE_STR, "int")!=NULL) {
-
-        int 
-            *a_h = NULL,
-            *a_from_h = NULL,
-            *a_from_d = NULL;
-    }
-    else if (strstr(ELEM_TYPE_STR, "float")!=NULL) {
-
-        float
-            *a_h = NULL,
-            *a_from_h = NULL,
-            *a_from_d = NULL;
-    }
-    else if (strstr(ELEM_TYPE_STR, "double")!=NULL) {
-
-        double
-            *a_h = NULL,
-            *a_from_h = NULL,
-            *a_from_d = NULL;
-    }
-    else if (strstr(ELEM_TYPE_STR, "fp16")!=NULL) {
-        ELEM_TYPE
-            *a_h = NULL,
-            *a_from_h = NULL,
-            *a_from_d = NULL;
-    }
-    else {
-        printf(">>> [ERROR] ELEM_TYPE_STR(%s) doesn't contain variable type\n", ELEM_TYPE_STR);
-        exit(-1);
     }
 
     char
@@ -149,14 +112,12 @@ int main(int argc, char * argv[]) {
     }
 
     len = heightA * widthA;
-
-
     data_size = len * sizeof( ELEM_TYPE );
     a_h = (ELEM_TYPE *) malloc (data_size);
     a_from_h = (ELEM_TYPE *) malloc (data_size);
     a_from_d = (ELEM_TYPE *) malloc (data_size);
 
-    printf("len: %d, data_size: %d, a_h: %p a_h+1: %p \n", len, (int)data_size, a_h, (a_h+1));
+    printf(">>> [INFO] len: %d, data_size: %d, a_h: %p a_h+1: %p \n\n", len, (int)data_size, a_h, (a_h+1));
 
     rand_mat(a_h, len, ELEM_RAND_RANGE);
     init_mat(a_from_h, len, ELEM_INIT_VALUE);
@@ -366,6 +327,7 @@ int main(int argc, char * argv[]) {
     print_mat(a_from_d, heightA, widthA);
 #endif
 
+    printf("\n\n");
 
 error:
     clFlush(command_queue);
