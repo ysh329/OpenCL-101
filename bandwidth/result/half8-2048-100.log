@@ -1,0 +1,27 @@
+Mali-T86x MP4 r2p0 0x0860
+>>> [INFO] ELEM_TYPE_STR: __fp16, sizeof(ELEM_TYPE): 2
+>>> [INFO] CL_ELEM_TYPE_STR: half8, sizeof(CL_ELEM_TYPE): 2
+>>> [INFO] cl_program_build_options: -D CL_ELEM_TYPE=half8
+len: 4194304, data_size: 8388608, a_h: 0x7f97999010 a_h+1: 0x7f97999011 
+============== CPU RESULT ==============
+>>> [INFO] 100 times CPU starting...
+>>> [INFO] CPU 2048 x 2048 0.003440 s 2438.378718 MFLOPS
+
+>>> [INFO] bandwidth: 4.54 GB/s
+>>> [TEST] correct rate: 1.0000
+>>> [TEST] ~ Bingo ~ matrix a == matrix b
+
+============== GPU RESULT ==============
+>>> [INFO]program_file: ./kernel.cl
+>>> [INFO] kernel_func: global_bandwidth_vec8
+>>> [INFO] global_work_size[3]: { 524288, 1, 1 }
+>>> [WARN] global work size (524288) is smaller than task size (4194304).
+
+>>> [INFO] 100 times ./kernel.cl.global_bandwidth_vec8 starting...
+>>> [INFO] skip first time.
+>>> [INFO] CL_GPU 2048 x 2048 0.002839 s 3059.302699 MFLOPS ./kernel.cl
+
+>>> [INFO] bandwidth: 5.50 GB/s
+>>> [TEST] correct rate: 1.0000
+>>> [TEST] ~ Bingo ~ matrix a == matrix b
+

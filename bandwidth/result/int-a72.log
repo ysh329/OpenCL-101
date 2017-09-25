@@ -1,0 +1,12 @@
+>>> [INFO] ELEM_TYPE_STR: int, sizeof(ELEM_TYPE): 4
+>>> [INFO] CL_ELEM_TYPE_STR: int16, sizeof(CL_ELEM_TYPE): 4
+>>> [INFO] cl_program_build_options: -D CL_ELEM_TYPE=int16
+len: 4194304, data_size: 16777216, a_h: 0x7f89ede010 a_h+1: 0x7f89ede011 
+============== CPU RESULT ==============
+>>> [INFO] 100 times CPU starting...
+>>> [INFO] CPU 2048 x 2048 0.006899 s 1215.886549 MFLOPS
+
+>>> [INFO] bandwidth: 4.53 GB/s
+>>> [TEST] correct rate: 1.0000
+>>> [TEST] ~ Bingo ~ matrix a == matrix b
+
