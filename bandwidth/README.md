@@ -65,6 +65,54 @@ Execute binary file as below, and watch out the difference between `float` and `
 $ ./bandwidth 2048 2048 ./kernel.cl global_bandwidth_vec8 100 $[2048*2048/8] 1 1
 ```
 
+### Bandwidth for half
+
+Change these lines in `bandwidth.c`:
+
+```cc
+#define   ELEM_TYPE                     __fp16
+#define   ELEM_TYPE_STR                 "__fp16"
+#define   CL_ELEM_TYPE                  cl_half 
+#define   CL_ELEM_TYPE_STR              "half"
+```
+
+Build:
+
+```shell
+$ ./make.sh
+```
+
+Execute:
+
+```shell
+$ # >>> [USAGE] ./bandwidth HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUNC_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]
+$ ./bandwidth 2048 2048 ./kernel.cl global_bandwidth_vec1 100 $[2048*2048] 1 1
+```
+
+### Bandwidth for half16
+
+Change these lines in `bandwidth.c`:
+
+```cc
+#define   ELEM_TYPE                     __fp16
+#define   ELEM_TYPE_STR                 "__fp16"
+#define   CL_ELEM_TYPE                  cl_half 
+#define   CL_ELEM_TYPE_STR              "half16"
+```
+
+Build:
+
+```shell
+$ ./make.sh
+```
+
+Execute:
+
+```shell
+$ # >>> [USAGE] ./bandwidth HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUNC_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]
+$ ./bandwidth 2048 2048 ./kernel.cl global_bandwidth_vec16 100 $[2048*2048/16] 1 1
+```
+
 ## Frequency Monitor & Modification
 
 Please refer to [tools](./tools) directory.
