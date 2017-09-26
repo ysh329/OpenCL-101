@@ -99,6 +99,8 @@ Change these lines in `bandwidth.c`:
 #define   CL_ELEM_TYPE_STR              "half16"
 ```
 
+Note: The `half` type is an outlier. If define `CL_ELEM_TYPE` as `cl_half16` or `halfN`, it'll cause a problem: `cl_halfN is undeclared`.
+
 Build:
 
 ```shell
