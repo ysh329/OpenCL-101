@@ -1,0 +1,15 @@
+============== INIT ==============
+>>> [INFO] ELEM_TYPE_STR: short, sizeof(ELEM_TYPE): 2
+>>> [INFO] CL_ELEM_TYPE_STR: short16, sizeof(CL_ELEM_TYPE): 32
+>>> [WARN] ELEM_TYPE(short) differs from CL_ELEM_TYPE(short16), data_size, too!
+>>> [INFO] cl_program_build_options: -D CL_ELEM_TYPE=short16
+>>> [INFO] len: 4194304, data_size: 8388608, a_h: 0x7f9f0f7010 a_h+1: 0x7f9f0f7012 
+
+============== CPU RESULT ==============
+>>> [INFO] 100 times CPU starting...
+>>> [INFO] CPU 2048 x 2048 0.006918 s 1212.619114 MFLOPS
+
+>>> [INFO] bandwidth: 2.26 GB/s
+>>> [TEST] correct rate: 1.0000
+>>> [TEST] ~ Bingo ~ matrix a == matrix b
+

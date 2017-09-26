@@ -1,0 +1,15 @@
+============== INIT ==============
+>>> [INFO] ELEM_TYPE_STR: __fp16, sizeof(ELEM_TYPE): 2
+>>> [INFO] CL_ELEM_TYPE_STR: int16, sizeof(CL_ELEM_TYPE): 4
+>>> [WARN] ELEM_TYPE(__fp16) differs from CL_ELEM_TYPE(int16), data_size, too!
+>>> [INFO] cl_program_build_options: -D CL_ELEM_TYPE=int16
+>>> [INFO] len: 4194304, data_size: 8388608, a_h: 0x7f99af0010 a_h+1: 0x7f99af0012 
+
+============== CPU RESULT ==============
+>>> [INFO] 100 times CPU starting...
+>>> [INFO] CPU 2048 x 2048 0.003994 s 2100.428669 MFLOPS
+
+>>> [INFO] bandwidth: 3.91 GB/s
+>>> [TEST] correct rate: 1.0000
+>>> [TEST] ~ Bingo ~ matrix a == matrix b
+

@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,15 +13,16 @@
 #include <CL/cl.h>
 #endif
 
-/////////////// == CHANGE VAR TYPE == /////////////
+///////////////////////// == CHANGE VAR TYPE == ///////////////////////
 // CPU ELEMENT TYPE: int, float, __fp16, double
-#define   ELEM_TYPE                     int
-#define   ELEM_TYPE_STR                 "int"
+#define   ELEM_TYPE                     float
+#define   ELEM_TYPE_STR                 "float"
 // OPENCL ELEMENT TYPE: int, intN, float, floatN, double, doubleN, cl_half, cl_halfN
-#define   CL_ELEM_TYPE                  cl_int //cl_float2, note: cl_half is allowed in host, cl_halfN not
+#define   CL_ELEM_TYPE                  cl_float16 //cl_float2, note: cl_half is allowed in host, cl_halfN not
 // CL_ELEM_TYPE_STR: macro define for CL kernel
-#define   CL_ELEM_TYPE_STR              "int16" // float2
-///////////////////////////////////////////////////
+#define   CL_ELEM_TYPE_STR              "float16" // float2
+#define   CL_OTHER_MACRO                ""//" -cl-mad-enable"
+///////////////////////////////////////////////////////////////////////
 
 #define   ELEM_RAND_RANGE               (100)
 #define   ELEM_INIT_VALUE               (1)
@@ -60,12 +60,15 @@ int main(int argc, char * argv[]) {
         *a_h = NULL,
         *a_from_h = NULL,
         *a_from_d = NULL;
+
+    printf(">>> [USAGE] %s HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUNC_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n\n", argv[0]);
+
     PRINT_LINE("INIT");
     printf(">>> [INFO] ELEM_TYPE_STR: %s, sizeof(ELEM_TYPE): %d\n", ELEM_TYPE_STR, (int)sizeof(ELEM_TYPE));
     printf(">>> [INFO] CL_ELEM_TYPE_STR: %s, sizeof(CL_ELEM_TYPE): %d\n", CL_ELEM_TYPE_STR, (int)sizeof(CL_ELEM_TYPE));
 
     if (sizeof(ELEM_TYPE) != sizeof(CL_ELEM_TYPE)) {
-        printf(">>> [WARN] ELEM_TYPE(%s) differs from CL_ELEM_TYPE(%s), data_size, too!\n", ELEM_TYPE_STR, CL_ELEM_TYPE_STR);
+        printf(">>> [WARN] ELEM_TYPE(%s) differs from CL_ELEM_TYPE(%s)\n", ELEM_TYPE_STR, CL_ELEM_TYPE_STR);
     }
 
     char
@@ -74,6 +77,28 @@ int main(int argc, char * argv[]) {
       cl_program_build_options[KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D ";
       strcat(cl_program_build_options, "CL_ELEM_TYPE=");
       strcat(cl_program_build_options, CL_ELEM_TYPE_STR);
+      strcat(cl_program_build_options, CL_OTHER_MACRO);
+
+    if (strstr(ELEM_TYPE_STR, "short")!=NULL) {
+        strcat(cl_program_build_options, " -D CL_INPUT_TYPE=short");
+    }
+    else if (strstr(ELEM_TYPE_STR, "int")!=NULL) {
+        strcat(cl_program_build_options, " -D CL_INPUT_TYPE=int");
+    }
+    else if (strstr(ELEM_TYPE_STR, "float")!=NULL) {
+        strcat(cl_program_build_options, " -D CL_INPUT_TYPE=float");
+    }
+    else if (strstr(ELEM_TYPE_STR, "double")!=NULL) {
+        strcat(cl_program_build_options, " -D CL_INPUT_TYPE=double");
+    }
+    else if (strstr(ELEM_TYPE_STR, "fp16")!=NULL) {
+        strcat(cl_program_build_options, " -D CL_INPUT_TYPE=half");
+    }
+    else {
+        printf(">>> [ERROR] CL_INPUT_TYPE defination is wrong.\n");
+        exit(-1);
+    }
+
       printf(">>> [INFO] cl_program_build_options: %s\n", cl_program_build_options);
 
 
@@ -106,8 +131,7 @@ int main(int argc, char * argv[]) {
         global_work_size[2] = atoi( argv[8] );
     }
     else {
-        printf(">>> [Usage] %s HEGHTA WIDTHA KERNEL_FILE_PATH KERNEL_FUN_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
-        printf(">>> [INFO] Note: KERNEL_FUNC(%s) must contain varible type and prefix (`global_bandwidth`) is required, such as global_bandwidth_float_v1\n", kernel_func);
+        printf(">>> [ERROR] please input args\n");
         exit(-1);
     }
 
@@ -177,13 +201,19 @@ int main(int argc, char * argv[]) {
     cl_int ret;
 
     /* Load the source code and containing the kernel */
-    FILE *fp, *program_handle;
+    FILE *program_handle;
     char *program_buffer;
     size_t program_size;
 
     PRINT_LINE("GPU RESULT");
-    ret = system("cat /sys/class/misc/mali0/device/gpuinfo");
-    printf(">>> [INFO]program_file: %s\n", program_file);
+    //ret = system("cat /sys/class/misc/mali0/device/gpuinfo");
+    FILE *fp; char buffer[80];
+    fp = popen("cat /sys/class/misc/mali0/device/gpuinfo", "r");
+    char *ret_ = fgets(buffer, sizeof(buffer), fp);
+    printf(">>> [INFO] Device name: %s", buffer);
+    pclose(fp);
+
+    printf(">>> [INFO] program_file: %s\n", program_file);
     printf(">>> [INFO] kernel_func: %s\n", kernel_func);
     program_handle = fopen(program_file, "r");
     if (program_handle == NULL) {
