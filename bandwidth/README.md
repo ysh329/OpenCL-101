@@ -29,9 +29,8 @@ $ ./bandwidth
 
 ============== INIT ==============
 >>> [INFO] ELEM_TYPE_STR: float, sizeof(ELEM_TYPE): 4
->>> [INFO] CL_ELEM_TYPE_STR: float16, sizeof(CL_ELEM_TYPE): 64
->>> [WARN] ELEM_TYPE(float) differs from CL_ELEM_TYPE(float16)
->>> [INFO] cl_program_build_options: -D CL_ELEM_TYPE=float16 -D CL_INPUT_TYPE=float
+>>> [INFO] CL_ELEM_TYPE_STR: float, sizeof(CL_ELEM_TYPE): 4
+>>> [INFO] cl_program_build_options: -D CL_ELEM_TYPE=float -D CL_INPUT_TYPE=float
 >>> [ERROR] please input args
 ```
 
@@ -115,4 +114,4 @@ $ ./bandwidth 2048 2048 ./kernel.cl global_bandwidth_vec16 100 $[2048*2048/16] 1
 
 ## Frequency Monitor & Modification
 
-Please refer to [tools](./tools) directory.
+Please refer to [tools](../tools) directory.
