@@ -99,7 +99,7 @@ Change these lines in `bandwidth.c`:
 #define   CL_ELEM_TYPE_STR              "half16"
 ```
 
-Note: The `half` type is an outlier. If define `CL_ELEM_TYPE` as `cl_half16` or `halfN`, it'll cause a problem: `cl_halfN is undeclared`.
+Note: The `half` type is an outlier (`halfN` is not defined in host: `cl_half2`, `cl_half4`, `cl_half8` and `cl_half16` are not in `/usr/include/CL/cl.h`). If define `CL_ELEM_TYPE` as `cl_half16` or `halfN`, it'll cause a problem: `cl_halfN is undeclared`.
 
 Build:
 
