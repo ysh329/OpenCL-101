@@ -18,9 +18,9 @@
 #define   ELEM_TYPE                     float
 #define   ELEM_TYPE_STR                 "float"
 // OPENCL ELEMENT TYPE: int, intN, float, floatN, double, doubleN, cl_half, cl_halfN
-#define   CL_ELEM_TYPE                  cl_float16 //cl_float2, note: cl_half is allowed in host, cl_halfN not
+#define   CL_ELEM_TYPE                  cl_float //cl_float2, note: cl_half is allowed in host, cl_halfN not
 // CL_ELEM_TYPE_STR: macro define for CL kernel
-#define   CL_ELEM_TYPE_STR              "float16" // float2
+#define   CL_ELEM_TYPE_STR              "float" // float2
 #define   CL_OTHER_MACRO                ""//" -cl-mad-enable"
 ///////////////////////////////////////////////////////////////////////
 
