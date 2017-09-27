@@ -14,22 +14,22 @@
 
 /*===================  CHANGE TYPE HERE ===================*/
 // Type on Host (CPU)
-#define 	ELEM_TYPE						float
-#define 	ELEM_TYPE_STR       			"float"
+#define     ELEM_TYPE                       float
+#define     ELEM_TYPE_STR                   "float"
 // Type on Device (GPU)
-#define     CL_ELEM_TYPE					cl_float
-#define 	CL_ELEM_TYPE_STR 				"float"
+#define     CL_ELEM_TYPE                    cl_float
+#define     CL_ELEM_TYPE_STR                "float"
 
 /*=================== OTHER OCL PARAMETERS ================*/
-#define 	CL_OTHER_MACRO					" -cl-mad-enable"
-#define     OCL_DEVICE_TYPE					"CL_GPU" // "CL_CPU" or "CL_GPU"
-#define     LOCAL_WORK_SIZE_POINTER			NULL
-#define 	KERNEL_FILE_AND_FUNC_MAX_LEN    (100)
+#define     CL_OTHER_MACRO                  " -cl-mad-enable"
+#define     OCL_DEVICE_TYPE                 "CL_GPU" // "CL_CPU" or "CL_GPU"
+#define     LOCAL_WORK_SIZE_POINTER         NULL
+#define     KERNEL_FILE_AND_FUNC_MAX_LEN    (100)
 #define     OCL_BUILD_LOG_MAX_LEN           (16348)
 
 /*=================== INITIALIZATION ======================*/
-#define 	ELEM_RAND_RANGE					(100)
-#define 	ELEM_INIT_VALUE					(1)
+#define     ELEM_RAND_RANGE                 (100)
+#define     ELEM_INIT_VALUE                 (1)
 
 /*=================== MACRO FUNCTION ======================*/
 #define     PRINT_LINE(title)               printf("============== %s ==============\n", title)
