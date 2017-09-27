@@ -5,144 +5,145 @@
 #include <sys/time.h>
 #include <math.h>
 
-// ocl
+	// ocl
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
 #include <CL/cl.h>
 #endif
 
-/*===================  CHANGE TYPE HERE ===================*/
-// Type on Host (CPU)
+	/*===================  CHANGE TYPE HERE ===================*/
+	// Type on Host (CPU)
 #define     ELEM_TYPE                       float
 #define     ELEM_TYPE_STR                   "float"
-// Type on Device (GPU)
+	// Type on Device (GPU)
 #define     CL_ELEM_TYPE                    cl_float
 #define     CL_ELEM_TYPE_STR                "float"
 
-/*=================== OTHER OCL PARAMETERS ================*/
+	/*=================== OTHER OCL PARAMETERS ================*/
 #define     CL_OTHER_MACRO                  " -cl-mad-enable"
 #define     OCL_DEVICE_TYPE                 "CL_GPU" // "CL_CPU" or "CL_GPU"
+#define     GLOBAL_WORK_SIZE_DIM            (3)
 #define     LOCAL_WORK_SIZE_POINTER         NULL
 #define     KERNEL_FILE_AND_FUNC_MAX_LEN    (100)
 #define     OCL_BUILD_LOG_MAX_LEN           (16348)
 
-/*=================== INITIALIZATION ======================*/
+	/*=================== INITIALIZATION ======================*/
 #define     ELEM_RAND_RANGE                 (100)
 #define     ELEM_INIT_VALUE                 (1)
 
-/*=================== MACRO FUNCTION ======================*/
+	/*=================== MACRO FUNCTION ======================*/
 #define     PRINT_LINE(title)               printf("============== %s ==============\n", title)
 
-/*=================== EXECUTION MODE ======================*/
+	/*=================== EXECUTION MODE ======================*/
 #define     MATRIX_MULT_CPU_ENABLE
 #define     MATRIX_MULT_GPU_ENABLE
-#define     DONT_PRINT_MATRIX_FLAG
+//#define     DONT_PRINT_MATRIX_FLAG
 
 #include "../common/matop.h"
 
 
 
-int main(int argc, char *argv[]) {
-    struct timeval start, end;
-    double sum_duration, duration, gflops, gbps;
-    ELEM_TYPE *a = NULL,
-              *b = NULL,
-              *c_h = NULL,
-              *c_d = NULL;
-    char program_file[KERNEL_FILE_AND_FUNC_MAX_LEN],
-         kernel_func[KERNEL_FILE_AND_FUNC_MAX_LEN],
-         cl_build_program_options[KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D ";
-    int m = 0,
-        n = 0,
-        k = 0,
-        len_a = 0,
-        len_b = 0,
-        len_c = 0,
-        run_num = 0,
-        ndim = 3;
-    size_t
-        data_size_a = 0,
-        data_size_b = 0,
-        data_size_c = 0,
-        global_work_size[3] = {1,1,1};
+	int main(int argc, char *argv[]) {
+		struct timeval start, end;
+		double sum_duration, duration, gflops, gbps;
+		ELEM_TYPE *a = NULL,
+				  *b = NULL,
+				  *c_h = NULL,
+				  *c_d = NULL;
+		char program_file[KERNEL_FILE_AND_FUNC_MAX_LEN],
+			 kernel_func[KERNEL_FILE_AND_FUNC_MAX_LEN],
+			 cl_build_program_options[KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D ";
+		int m = 0,
+			n = 0,
+			k = 0,
+			len_a = 0,
+			len_b = 0,
+			len_c = 0,
+			run_num = 0;
+		size_t
+			data_size_a = 0,
+			data_size_b = 0,
+			data_size_c = 0,
+			global_work_size[3] = {1,1,1};
 
-    if (argc == 10) {
-        /*********************************
-          0. argc[0] file name
-          1. argc[1] m
-          2. argc[2] n
-          3. argc[3] k
-          4. argc[3] kernel_file_path
-          5. argc[4] kernel_func_name
-          6. argc[5] run_num
-          7. argc[6] global_work_size[0]
-          8. argc[7] global_work_size[1]
-          9. argc[8] global_work_size[2]
-        *********************************/
-        m = atoi( argv[1] );
-        n = atoi( argv[2] );
-        k = atoi( argv[3] );
-        strcpy(program_file, argv[4]);
-        strcpy(kernel_func, argv[5]);
-        run_num = atoi( argv[6] );
-        global_work_size[0] = atoi( argv[7] );
-        global_work_size[1] = atoi( argv[8] );
-        global_work_size[2] = atoi( argv[9] );
-       
-    }
-    else {
-        printf(">>> [USAGE] %s M N K KERNEL_FILE_PATH KERNEL_FUNC_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
-        printf(">>> [ERROR] please input args\n");
-        exit(-1);
-    }
+		if (argc == 10) {
+			/*********************************
+			  0. argc[0] file name
+			  1. argc[1] m
+			  2. argc[2] n
+			  3. argc[3] k
+			  4. argc[3] kernel_file_path
+			  5. argc[4] kernel_func_name
+			  6. argc[5] run_num
+			  7. argc[6] global_work_size[0]
+			  8. argc[7] global_work_size[1]
+			  9. argc[8] global_work_size[2]
+			*********************************/
+			m = atoi( argv[1] );
+			n = atoi( argv[2] );
+			k = atoi( argv[3] );
+			strcpy(program_file, argv[4]);
+			strcpy(kernel_func, argv[5]);
+			run_num = atoi( argv[6] );
+			global_work_size[0] = atoi( argv[7] );
+			global_work_size[1] = atoi( argv[8] );
+			global_work_size[2] = atoi( argv[9] );
+		   
+		}
+		else {
+			printf(">>> [USAGE] %s M N K KERNEL_FILE_PATH KERNEL_FUNC_NAME LOOP_EXECUTION_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
+			printf(">>> [ERROR] please input args\n");
+			exit(-1);
+		}
 
-    // check argc
-    //for (int i = 0; i < 10; i++) printf("%d %s\n", i, argv[i]);
+		// check argc
+		//for (int i = 0; i < 10; i++) printf("%d %s\n", i, argv[i]);
 
-    strcat(cl_build_program_options, "CL_ELEM_TYPE=");
-    strcat(cl_build_program_options, CL_ELEM_TYPE_STR);
-    strcat(cl_build_program_options, CL_OTHER_MACRO);
+		strcat(cl_build_program_options, "CL_ELEM_TYPE=");
+		strcat(cl_build_program_options, CL_ELEM_TYPE_STR);
+		strcat(cl_build_program_options, CL_OTHER_MACRO);
 
-    if (strstr(ELEM_TYPE_STR, "short")!=NULL) {
-        strcat(cl_build_program_options, " -D CL_INPUT_TYPE=short");
-    }
-    else if (strstr(ELEM_TYPE_STR, "int")!=NULL) {
-        strcat(cl_build_program_options, " -D CL_INPUT_TYPE=int");
-    }
-    else if (strstr(ELEM_TYPE_STR, "float")!=NULL) {
-        strcat(cl_build_program_options, " -D CL_INPUT_TYPE=float");
-    }
-    else if (strstr(ELEM_TYPE_STR, "double")!=NULL) {
-        strcat(cl_build_program_options, " -D CL_INPUT_TYPE=double");
-    }
-    else if (strstr(ELEM_TYPE_STR, "fp16")!=NULL) {
-        strcat(cl_build_program_options, " -D CL_INPUT_TYPE=half");
-    }
-    else {
-        printf(">>> [ERROR] CL_INPUT_TYPE and ELEM_TYPE_STR defination is wrong\n");
-        exit(-1);
-    }
+		if (strstr(ELEM_TYPE_STR, "short")!=NULL) {
+			strcat(cl_build_program_options, " -D CL_INPUT_TYPE=short");
+		}
+		else if (strstr(ELEM_TYPE_STR, "int")!=NULL) {
+			strcat(cl_build_program_options, " -D CL_INPUT_TYPE=int");
+		}
+		else if (strstr(ELEM_TYPE_STR, "float")!=NULL) {
+			strcat(cl_build_program_options, " -D CL_INPUT_TYPE=float");
+		}
+		else if (strstr(ELEM_TYPE_STR, "double")!=NULL) {
+			strcat(cl_build_program_options, " -D CL_INPUT_TYPE=double");
+		}
+		else if (strstr(ELEM_TYPE_STR, "fp16")!=NULL) {
+			strcat(cl_build_program_options, " -D CL_INPUT_TYPE=half");
+		}
+		else {
+			printf(">>> [ERROR] CL_INPUT_TYPE and ELEM_TYPE_STR defination is wrong\n");
+			exit(-1);
+		}
 
-    printf(">>> [INFO] ELEM_TYPE_STR: %s, sizeof(ELEM_TYPE): %d\n", ELEM_TYPE_STR, (int)sizeof(ELEM_TYPE));
-    printf(">>> [INFO] CL_ELEM_TYPE_STR: %s, sizeof(CL_ELEM_TYPE): %d\n", CL_ELEM_TYPE_STR, (int)sizeof(CL_ELEM_TYPE));
-    if (sizeof(ELEM_TYPE) != sizeof(CL_ELEM_TYPE)) {
-        printf(">>> [WARN] ELEM_TYPE(%s) size differs from CL_ELEM_TYPE(%s)\n", ELEM_TYPE_STR, CL_ELEM_TYPE_STR);
-    }
+        PRINT_LINE("INIT");
+		printf(">>> [INFO] ELEM_TYPE_STR: %s, sizeof(ELEM_TYPE): %d\n", ELEM_TYPE_STR, (int)sizeof(ELEM_TYPE));
+		printf(">>> [INFO] CL_ELEM_TYPE_STR: %s, sizeof(CL_ELEM_TYPE): %d\n", CL_ELEM_TYPE_STR, (int)sizeof(CL_ELEM_TYPE));
+		if (sizeof(ELEM_TYPE) != sizeof(CL_ELEM_TYPE)) {
+			printf(">>> [WARN] ELEM_TYPE(%s) size differs from CL_ELEM_TYPE(%s)\n", ELEM_TYPE_STR, CL_ELEM_TYPE_STR);
+		}
 
-    len_a = m * k;
-    len_b = n * k;
-    len_c = m * n;
-    data_size_a = len_a * sizeof( ELEM_TYPE );
-    data_size_b = len_b * sizeof( ELEM_TYPE );
-    data_size_c = len_c * sizeof( ELEM_TYPE );
-    a = (ELEM_TYPE *) malloc (data_size_a);
-    b = (ELEM_TYPE *) malloc (data_size_b);
-    c_h = (ELEM_TYPE *) malloc (data_size_c);
-    c_d = (ELEM_TYPE *) malloc (data_size_c);
-    
-    printf(">>> [INFO] len_a: %d, len_b: %d, len_c: %d\n", len_a, len_b, len_c);
-    printf(">>> [INFO] data_size_a: %d, data_size_b: %d, data_size_c: %d\n", (int)data_size_a, (int)data_size_b, (int)data_size_c);
+		len_a = m * k;
+		len_b = n * k;
+		len_c = m * n;
+		data_size_a = len_a * sizeof( ELEM_TYPE );
+		data_size_b = len_b * sizeof( ELEM_TYPE );
+		data_size_c = len_c * sizeof( ELEM_TYPE );
+		a = (ELEM_TYPE *) malloc (data_size_a);
+		b = (ELEM_TYPE *) malloc (data_size_b);
+		c_h = (ELEM_TYPE *) malloc (data_size_c);
+		c_d = (ELEM_TYPE *) malloc (data_size_c);
+		
+		printf(">>> [INFO] len_a: %d, len_b: %d, len_c: %d\n", len_a, len_b, len_c);
+		printf(">>> [INFO] data_size_a: %d, data_size_b: %d, data_size_c: %d\n\n", (int)data_size_a, (int)data_size_b, (int)data_size_c);
 
     rand_mat(a, len_a, ELEM_RAND_RANGE);
     rand_mat(b, len_b, ELEM_RAND_RANGE);
@@ -213,7 +214,7 @@ int main(int argc, char *argv[]) {
     FILE *fp; char buffer[KERNEL_FILE_AND_FUNC_MAX_LEN];
     fp = popen("cat /sys/class/misc/mali0/device/gpuinfo", "r");
     char *ret_ = fgets(buffer, sizeof(buffer), fp);
-    printf(">>> [INFO] Device name: %s\n", buffer);
+    printf(">>> [INFO] Device name: %s", buffer);
     pclose(fp);
 
     // Load source
@@ -272,13 +273,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Memory buffer
-    a_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
-    b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, data_size, NULL, &ret);
-    c_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, data_size, NULL, &ret);
+    a_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, data_size_a, NULL, &ret);
+    b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, data_size_b, NULL, &ret);
+    c_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, data_size_c, NULL, &ret);
 
-    ret = clEnqueueWriteBuffer(command_queue, a_buffer, CL_TRUE, 0, data_size, (void *)a, 0, NULL, NULL);
-    ret |= clEnqueueWriteBuffer(command_queue, b_buffer, CL_TRUE, 0, data_size, (void *)b, 0, NULL, NULL);
-    ret |= clEnqueueWriteBuffer(command_queue, c_buffer, CL_TRUE, 0, data_size, (void *)c_d, 0, NULL, NULL);
+    ret = clEnqueueWriteBuffer(command_queue, a_buffer, CL_TRUE, 0, data_size_a, (void *)a, 0, NULL, NULL);
+    ret |= clEnqueueWriteBuffer(command_queue, b_buffer, CL_TRUE, 0, data_size_b, (void *)b, 0, NULL, NULL);
+    ret |= clEnqueueWriteBuffer(command_queue, c_buffer, CL_TRUE, 0, data_size_c, (void *)c_d, 0, NULL, NULL);
     if (ret != CL_SUCCESS) {
         printf(">>> [ERROR] failed to copy data from host to device: %d\n", (int)ret);
         goto error;
@@ -311,13 +312,59 @@ int main(int argc, char *argv[]) {
 
     ret = clSetKernelArg(kernel, 0, sizeof(cl_int), (void *) &m);
     ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), (void *) &n);
-    ret |= clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *) &k);
-    ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *) &a_from_d_buff);
+    ret |= clSetKernelArg(kernel, 2, sizeof(cl_int), (void *) &k);
+    ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *) &a_buffer);
+    ret |= clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *) &b_buffer);
+    ret |= clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *) &c_buffer);
     if (ret != CL_SUCCESS) {
         printf(">>> [ERROR] failed to set kernel arguments.%d\n", (int)ret);
         goto error;
     }
 
+    printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", GLOBAL_WORK_SIZE_DIM, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
+    int global_size = (int) global_work_size[0] * (int) global_work_size[1] * (int) global_work_size[2];
+    int task_size = m * n * k;
+    if (global_size < task_size) {
+        printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", global_size, task_size);
+    }
+
+    /* GPU */
+    printf(">>> [INFO] %s %d times %s.%s starting ...\n", OCL_DEVICE_TYPE, run_num, program_file, kernel_func);
+    sum_duration = 0.0;
+    for (int ridx = 0; ridx < (run_num+1); ridx++) {
+        gettimeofday(&start, NULL);
+        // Run kernel
+        clEnqueueNDRangeKernel(command_queue, kernel, GLOBAL_WORK_SIZE_DIM, NULL, 
+                               global_work_size,
+                               LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);
+        clFinish(command_queue);
+        gettimeofday(&end, NULL);
+        duration = ((double)(end.tv_sec-start.tv_sec) + 
+                    (double)(end.tv_usec-start.tv_usec)/1000000);
+        if (ridx == 0) {
+            printf(">>> [INFO] skip first time\n");
+            continue;
+        }
+        sum_duration += duration;
+    }
+    gflops = 2.0 * m * n * k;
+    gflops = gflops / sum_duration / (double)run_num *1.0e-9;
+    gbps = 0;
+    printf(">>> [INFO] %s %dx%dx%d %2.6lf s %2.6lf GFLOPS\n\n", "CPU", m, n, k, sum_duration, gflops);
+
+    // Copy result from device to host
+    ret = clEnqueueReadBuffer(command_queue, c_buffer, CL_TRUE, 0, data_size_c, (void *)c_d, 0, NULL, NULL);
+    if (ret != CL_SUCCESS) {
+        printf(">>> [ERROR] failed to copy data from device to host: %d\n", (int)ret);
+        goto error;
+    }
+
+    equal_vec(c_h, c_d, len_c);
+
+#ifndef DONT_PRINT_MATRIX_FLAG
+    printf("c_d:\n");
+    print_mat(c_d, k, n);
+#endif
 
 error:
     clFlush(command_queue);
