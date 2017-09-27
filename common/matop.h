@@ -109,12 +109,13 @@ void dotprod_mat(ELEM_TYPE *a, ELEM_TYPE *b, ELEM_TYPE *res, int len) {
 // row-major
 void mult_mat(ELEM_TYPE *a, ELEM_TYPE *b, ELEM_TYPE *res, int M, int N, int K) {
     int i, j, p;
-    init_mat(res, M*K, 0); 
+    init_mat(res, N*M, 0); 
     for (i = 0; i < M; i++)
-        for (j = 0; j < N; j++) 
+        for (j = 0; j < N; j++)
             for (p = 0; p < K; p++) {
-                res[i * M + j] += a[i * K + p] * b[p * N + j]; 
-                //printf("res[%d, %d] %.2f += a[%d, %d] %.2f * b[%d, %d] %.2f \n", i, j, res[i*M+j], i, p, a[i*K+p], p, j, b[p*N+j]);
+                res[i * N + j] += a[i * K + p] * b[p * N + j];
+                // check
+                //printf("res[%d * %d + %d] %.2f += a[%d, %d] %.2f * b[%d, %d] %.2f \n", i, N, j, res[i*N+j], i, p, a[i*K+p], p, j, b[p*N+j]);
             }
 }
 
