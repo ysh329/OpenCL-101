@@ -38,6 +38,7 @@
 /*=================== EXECUTION MODE ======================*/
 #define     MATRIX_MULT_CPU_ENABLE
 #define     MATRIX_MULT_GPU_ENABLE
+//#define     DONT_PRINT_EACH_BENCHMARK
 #define     DONT_PRINT_MATRIX_FLAG
 
 #include "../common/matop.h"
@@ -46,7 +47,7 @@
 
 int main(int argc, char *argv[]) {
 	struct timeval start, end;
-	double sum_duration, duration, gflops, gbps;
+	double ave_duration, sum_duration, duration, gflops, gbps;
 	ELEM_TYPE *a = NULL,
 			  *b = NULL,
 			  *c_h = NULL,
@@ -168,12 +169,16 @@ int main(int argc, char *argv[]) {
         gettimeofday(&end, NULL);
         duration = ((double)(end.tv_sec-start.tv_sec) + 
                     (double)(end.tv_usec-start.tv_usec)/1000000);
+        #ifndef DONT_PRINT_EACH_BENCHMARK
+        printf("%.6f\n", duration);
+        #endif
         sum_duration += duration;
     }
+    ave_duration = sum_duration / (double)run_num;
     gflops = 2.0 * m * n * k;
-    gflops = gflops / sum_duration / (double)run_num *1.0e-9;
+    gflops = gflops / ave_duration *1.0e-9;
     gbps = 0;
-    printf(">>> [INFO] %s %dx%dx%d %2.6lf s %2.6lf GFLOPS\n\n", "CPU", m, n, k, sum_duration/(double)(run_num), gflops);
+    printf(">>> [INFO] %s %dx%dx%d %2.6lf s %2.6lf GFLOPS\n\n", "CPU", m, n, k, ave_duration, gflops);
 
 #endif
 
@@ -341,12 +346,17 @@ int main(int argc, char *argv[]) {
             printf(">>> [INFO] skip first time\n");
             continue;
         }
+        #ifndef DONT_PRINT_EACH_BENCHMARK
+        printf("%.6f\n", duration);
+        #endif
         sum_duration += duration;
     }
+    ave_duration = sum_duration / (double)run_num;
     gflops = 2.0 * m * n * k;
-    gflops = gflops / sum_duration / (double)run_num *1.0e-9;
+    printf("gflops: %.6f \nave_duration: %.6f\n", gflops, ave_duration);
+    gflops = gflops / ave_duration * 1.0e-9;
     gbps = 0;
-    printf(">>> [INFO] %s %dx%dx%d %2.6lf s %2.6lf GFLOPS\n\n", OCL_DEVICE_TYPE, m, n, k, sum_duration/(double)run_num, gflops);
+    printf(">>> [INFO] %s %dx%dx%d %2.6lf s %2.6lf GFLOPS\n\n", OCL_DEVICE_TYPE, m, n, k, ave_duration, gflops);
 
     // Copy result from device to host
     ret = clEnqueueReadBuffer(command_queue, c_buffer, CL_TRUE, 0, data_size_c, (void *)c_d, 0, NULL, NULL);
