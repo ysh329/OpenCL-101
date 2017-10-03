@@ -374,8 +374,6 @@ error:
 
     clReleaseCommandQueue(command_queue);
     clReleaseContext(context);
-    clReleaseProgram(program);
-    clReleaseKernel(kernel);
 
     free(program_buffer);
 
