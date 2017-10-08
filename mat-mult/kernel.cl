@@ -3,7 +3,7 @@
 __kernel void mat_mult_naive(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0);
     const int row = get_global_id(1);
-    CL_INPUT_TYPE res = 0;
+    CL_ELEM_TYPE res = 0;
 
     for (int p = 0; p < K; p++) {
         res += a[row * M + p] * b[p * N + col];
@@ -11,7 +11,12 @@ __kernel void mat_mult_naive(const int M, const int N, const int K, __global con
     c[row * N + col] = res;
 }
 
+__kernel void mat_mult_vec2(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
+    const int col = get_global_id(0);
+    const int row = get_global_id(1);
+    CL_ELEM_TYPE res = 0;
 
+}
 
 
 
