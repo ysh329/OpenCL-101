@@ -40,6 +40,7 @@
 #define     MATRIX_MULT_GPU_ENABLE
 //#define     DONT_PRINT_EACH_BENCHMARK
 #define     DONT_PRINT_MATRIX_FLAG
+#define     BENCHMARK_SKIP_TIMES            (1)
 
 #include "../common/matop.h"
 
@@ -163,15 +164,19 @@ int main(int argc, char *argv[]) {
     PRINT_LINE("CPU RESULT");
     printf(">>> [INFO] %d times %s starting...\n", run_num, "CPU");
     sum_duration = 0.0;
-    for (int ridx; ridx < run_num; ridx++) {
+    for (int ridx; ridx < (run_num + BENCHMARK_SKIP_TIMES); ridx++) {
         gettimeofday(&start, NULL);
         mult_mat(a, b, c_h, m, n, k);
         gettimeofday(&end, NULL);
         duration = ((double)(end.tv_sec-start.tv_sec) + 
                     (double)(end.tv_usec-start.tv_usec)/1000000);
         #ifndef DONT_PRINT_EACH_BENCHMARK
-        printf("%.6f\n", duration);
+        printf("%d \t %.6f\n", ridx, duration);
         #endif
+        if (ridx < BENCHMARK_SKIP_TIMES) {
+            printf(">>> [INFO] skip first %d time(s)\n", BENCHMARK_SKIP_TIMES);
+            continue;
+        }
         sum_duration += duration;
     }
     ave_duration = sum_duration / (double)run_num;
@@ -342,13 +347,13 @@ int main(int argc, char *argv[]) {
         gettimeofday(&end, NULL);
         duration = ((double)(end.tv_sec-start.tv_sec) + 
                     (double)(end.tv_usec-start.tv_usec)/1000000);
-        if (ridx == 0) {
-            printf(">>> [INFO] skip first time\n");
+        #ifndef DONT_PRINT_EACH_BENCHMARK
+        printf("%d \t %.6f\n", ridx, duration);
+        #endif
+        if (ridx < BENCHMARK_SKIP_TIMES) {
+            printf(">>> [INFO] skip first %d time(s)\n", BENCHMARK_SKIP_TIMES);
             continue;
         }
-        #ifndef DONT_PRINT_EACH_BENCHMARK
-        printf("%.6f\n", duration);
-        #endif
         sum_duration += duration;
     }
     ave_duration = sum_duration / (double)run_num;
