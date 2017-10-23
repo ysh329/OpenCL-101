@@ -18,7 +18,7 @@
 #define     ELEM_TYPE_STR                   "float"
 // Type on Device (GPU)
 #define     CL_ELEM_TYPE                    cl_float
-#define     CL_ELEM_TYPE_STR                "float2"
+#define     CL_ELEM_TYPE_STR                "float"
 
 /*=================== OTHER OCL PARAMETERS ================*/
 #define     CL_OTHER_MACRO                  ""//" -cl-mad-enable"
