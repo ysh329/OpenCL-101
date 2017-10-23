@@ -103,7 +103,7 @@ __kernel void mat_mult_vec1x2_continue(const int M, const int N, const int K, __
 }
 
 
-// perf up! 1024x1024x1024 float
+// perf up 11%! 1024x1024x1024 float
 // float: naive: 0.59s this: 0.53s
 __kernel void mat_mult_vec2x2(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 1;
