@@ -79,14 +79,14 @@ __kernel void mat_mult_vec1x2(const int M, const int N, const int K, __global co
 
 // TODO: Strange, I think it's right!
 __kernel void mat_mult_vec1x2_continue(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
-    const int col = get_global_id(0);
-    const int row = get_global_id(0);
+    const int col = get_global_id(0) << 1;
+    const int row = get_global_id(1);
 
-    CL_ELEM_TYPE aa, bb1, bb2, cc = 0;
+    CL_ELEM_TYPE aa, bb1, bb2, cc = (CL_ELEM_TYPE)(0.0f, 0.0f);
 
     for (int p = 0; p < K; p += 2) {
         aa = *(
-                  (__global CL_ELEM_TYPE *)(a + row * M + p) 
+                  (__global CL_ELEM_TYPE *)(a + row * K + p) 
               );
 
         bb1 = *( 
@@ -96,7 +96,7 @@ __kernel void mat_mult_vec1x2_continue(const int M, const int N, const int K, __
                   (__global CL_ELEM_TYPE *)(b + (p+1) * N + col) 
               );
         cc.s0 += aa.s0 * bb1.s0 + aa.s1 * bb2.s0;
-        cc.s1 += aa.s0 + bb1.s1 + aa.s1 * bb2.s1;
+        cc.s1 += aa.s0 * bb1.s1 + aa.s1 * bb2.s1;
     }
     c[row * N + col] = cc.s0;
     c[row * N + (col+1)] = cc.s1;
