@@ -77,7 +77,8 @@ __kernel void mat_mult_vec1x2(const int M, const int N, const int K, __global co
 }
 
 
-// TODO: Strange, I think it's right!
+// No perf up! 1024x1024x1024 float
+// float: naive: 0.59s this: 0.59s
 __kernel void mat_mult_vec1x2_continue(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 1;
     const int row = get_global_id(1);
@@ -150,10 +151,10 @@ __kernel void mat_mult_vec2x2_continue(const int M, const int N, const int K, __
 
     for (int p = 0; p < K; p+=2) {
         aa1 = *(
-                   (__global CL_ELEM_TYPE *)(a + row * M + p)
+                   (__global CL_ELEM_TYPE *)(a + row * K + p)
                );
         aa2 = *(
-                   (__global CL_ELEM_TYPE *)(a + (row+1) * M + p)
+                   (__global CL_ELEM_TYPE *)(a + (row+1) * K + p)
                );
 
         bb1 = *(
@@ -167,13 +168,13 @@ __kernel void mat_mult_vec2x2_continue(const int M, const int N, const int K, __
         cc2 = (CL_ELEM_TYPE)
                   (aa2.s0*bb1.s0 + aa2.s1*bb2.s0,    aa2.s0*bb1.s1 + aa2.s1*bb2.s1);
     }
-    //*(__global CL_ELEM_TYPE *)(c + row * N + col) = cc1.s0;         *(__global CL_ELEM_TYPE *)(c + row * N + (col+1)) = cc1.s1;
-    //*(__global CL_ELEM_TYPE *)(c + (row+1) * N + col) = cc2.s0;     *(__global CL_ELEM_TYPE *)(c + (row+1) * N + (col+1)) = cc2.s0;
 
+    *(__global CL_ELEM_TYPE *)(c + row * N + col) = cc1.s0;         *(__global CL_ELEM_TYPE *)(c + row * N + (col+1)) = cc1.s1;
+    *(__global CL_ELEM_TYPE *)(c + (row+1) * N + col) = cc2.s0;     *(__global CL_ELEM_TYPE *)(c + (row+1) * N + (col+1)) = cc2.s0;
     //*(__global CL_ELEM_TYPE *)(c + (row+1) * N + col) = cc2;
 
-    c[row * N + col] = cc1.s0;      c[row * N + (col+1)] = cc1.s1;
-    c[(row+1)*N + col] = cc2.s0;    c[(row+1)*N + (col+1)] = cc2.s1;
+    //c[row * N + col] = cc1.s0;      c[row * N + (col+1)] = cc1.s1;
+    //c[(row+1)*N + col] = cc2.s0;    c[(row+1)*N + (col+1)] = cc2.s1;
 
 }
 
