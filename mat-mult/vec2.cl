@@ -1,5 +1,6 @@
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
+// 1024x1024x1024 0.735461 s 2.919914 GFLOPS
 __kernel void mat_mult_vec2(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0);
     const int row = get_global_id(1);
@@ -23,7 +24,7 @@ __kernel void mat_mult_vec2(const int M, const int N, const int K, __global cons
     c[row * N + col] = res.s0 + res.s1;
 }
 
-
+// 1024x1024x1024 0.720586 s 2.980189 GFLOPS
 __kernel void mat_mult_vec2x1(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0);
     const int row = get_global_id(1) << 1;
@@ -47,7 +48,7 @@ __kernel void mat_mult_vec2x1(const int M, const int N, const int K, __global co
     c[(row+1) * N + col] = res2.s0 + res2.s1;
 }
 
-
+// 1024x1024x1024 0.961891 s 2.232565 GFLOPS
 __kernel void mat_mult_vec1x2(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 1;
     const int row = get_global_id(1);
@@ -79,6 +80,7 @@ __kernel void mat_mult_vec1x2(const int M, const int N, const int K, __global co
 
 // No perf up! 1024x1024x1024 float
 // float: naive: 0.59s this: 0.59s
+// 1024x1024x1024 0.597122 s 3.596389 GFLOPS
 __kernel void mat_mult_vec1x2_continue(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 1;
     const int row = get_global_id(1);
@@ -106,6 +108,7 @@ __kernel void mat_mult_vec1x2_continue(const int M, const int N, const int K, __
 
 // perf up 11%! 1024x1024x1024 float
 // float: naive: 0.59s this: 0.53s
+// 1024x1024x1024 0.541042 s 3.969165 GFLOPS
 __kernel void mat_mult_vec2x2(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 1;
     const int row = get_global_id(1) << 1;
@@ -139,10 +142,12 @@ __kernel void mat_mult_vec2x2(const int M, const int N, const int K, __global co
 
 
 
-// TODO: Strange! I think it's right!
+// perf up! 24%
+// 1024x1024x1024 0.458464 s 4.684079 GFLOPS
+// naive float : 0.59s ; this float2: 0.45s
 __kernel void mat_mult_vec2x2_continue(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
-    const int col = get_global_id(0);
-    const int row = get_global_id(1);
+    const int col = get_global_id(0) << 1;
+    const int row = get_global_id(1) << 1;
 
     CL_ELEM_TYPE aa1, aa2,
                  bb1, bb2,
@@ -163,18 +168,15 @@ __kernel void mat_mult_vec2x2_continue(const int M, const int N, const int K, __
         bb2 = *(
                    (__global CL_ELEM_TYPE *)(b + (p+1) * N + col)
                );
-        cc1 = (CL_ELEM_TYPE)
-                  (aa1.s0*bb1.s0 + aa1.s1*bb2.s0,    aa1.s0*bb1.s1 + aa1.s1*bb2.s1);
-        cc2 = (CL_ELEM_TYPE)
-                  (aa2.s0*bb1.s0 + aa2.s1*bb2.s0,    aa2.s0*bb1.s1 + aa2.s1*bb2.s1);
+        
+        cc1.s0 += aa1.s0 * bb1.s0 + aa1.s1 * bb2.s0;
+        cc1.s1 += aa1.s0 * bb1.s1 + aa1.s1 * bb2.s1;
+        cc2.s0 += aa2.s0 * bb1.s0 + aa2.s1 * bb2.s0;
+        cc2.s1 += aa2.s0 * bb1.s1 + aa2.s1 * bb2.s1;
     }
 
-    *(__global CL_ELEM_TYPE *)(c + row * N + col) = cc1.s0;         *(__global CL_ELEM_TYPE *)(c + row * N + (col+1)) = cc1.s1;
-    *(__global CL_ELEM_TYPE *)(c + (row+1) * N + col) = cc2.s0;     *(__global CL_ELEM_TYPE *)(c + (row+1) * N + (col+1)) = cc2.s0;
-    //*(__global CL_ELEM_TYPE *)(c + (row+1) * N + col) = cc2;
-
-    //c[row * N + col] = cc1.s0;      c[row * N + (col+1)] = cc1.s1;
-    //c[(row+1)*N + col] = cc2.s0;    c[(row+1)*N + (col+1)] = cc2.s1;
+    c[row * N + col] = cc1.s0;        c[row * N + (col+1)] = cc1.s1;
+    c[(row+1) * N + col] = cc2.s0;    c[(row+1) * N + (col+1)] = cc2.s1;
 
 }
 
