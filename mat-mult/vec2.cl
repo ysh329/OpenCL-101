@@ -1,6 +1,7 @@
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
-// 1024x1024x1024 0.735461 s 2.919914 GFLOPS
+// float 1024x1024x1024 0.735461 s 2.919914 GFLOPS
+// half  1024x1024x1024 0.682712 s 3.145521 GFLOPS
 __kernel void mat_mult_vec2(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0);
     const int row = get_global_id(1);
@@ -24,7 +25,8 @@ __kernel void mat_mult_vec2(const int M, const int N, const int K, __global cons
     c[row * N + col] = res.s0 + res.s1;
 }
 
-// 1024x1024x1024 0.720586 s 2.980189 GFLOPS
+// float 1024x1024x1024 0.720586 s 2.980189 GFLOPS
+// half 1024x1024x1024 0.386064 s 5.562503 GFLOPS 
 __kernel void mat_mult_vec2x1(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0);
     const int row = get_global_id(1) << 1;
@@ -48,7 +50,8 @@ __kernel void mat_mult_vec2x1(const int M, const int N, const int K, __global co
     c[(row+1) * N + col] = res2.s0 + res2.s1;
 }
 
-// 1024x1024x1024 0.961891 s 2.232565 GFLOPS
+// float 1024x1024x1024 0.961891 s 2.232565 GFLOPS
+// half 1024x1024x1024 0.663643 s 3.235903 GFLOPS
 __kernel void mat_mult_vec1x2(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 1;
     const int row = get_global_id(1);
@@ -80,7 +83,8 @@ __kernel void mat_mult_vec1x2(const int M, const int N, const int K, __global co
 
 // No perf up! 1024x1024x1024 float
 // float: naive: 0.59s this: 0.59s
-// 1024x1024x1024 0.597122 s 3.596389 GFLOPS
+// float 1024x1024x1024 0.597122 s 3.596389 GFLOPS
+// half 1024x1024x1024 0.290586 s 7.390193 GFLOPS
 __kernel void mat_mult_vec1x2_continue(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 1;
     const int row = get_global_id(1);
@@ -108,7 +112,8 @@ __kernel void mat_mult_vec1x2_continue(const int M, const int N, const int K, __
 
 // perf up 11%! 1024x1024x1024 float
 // float: naive: 0.59s this: 0.53s
-// 1024x1024x1024 0.541042 s 3.969165 GFLOPS
+// float 1024x1024x1024 0.541042 s 3.969165 GFLOPS
+// half 1024x1024x1024 0.490836 s 4.375153 GFLOPS
 __kernel void mat_mult_vec2x2(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 1;
     const int row = get_global_id(1) << 1;
@@ -143,8 +148,9 @@ __kernel void mat_mult_vec2x2(const int M, const int N, const int K, __global co
 
 
 // perf up! 24%
-// 1024x1024x1024 0.458464 s 4.684079 GFLOPS
+// float 1024x1024x1024 0.458464 s 4.684079 GFLOPS
 // naive float : 0.59s ; this float2: 0.45s
+// half 1024x1024x1024 0.250268 s 8.580726 GFLOPS
 __kernel void mat_mult_vec2x2_continue(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 1;
     const int row = get_global_id(1) << 1;
@@ -174,9 +180,7 @@ __kernel void mat_mult_vec2x2_continue(const int M, const int N, const int K, __
         cc2.s0 += aa2.s0 * bb1.s0 + aa2.s1 * bb2.s0;
         cc2.s1 += aa2.s0 * bb1.s1 + aa2.s1 * bb2.s1;
     }
-
     c[row * N + col] = cc1.s0;        c[row * N + (col+1)] = cc1.s1;
     c[(row+1) * N + col] = cc2.s0;    c[(row+1) * N + (col+1)] = cc2.s1;
-
 }
 
