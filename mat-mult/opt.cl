@@ -426,7 +426,7 @@ __kernel void AddDot_8_1x4(const int K, __global const CL_INPUT_TYPE *aa, const 
 }
 
 ////////////////////////////////////////////////////////////////
-//// Optimization 9
+//// Optimization 9: nothing to do with opt8
 ////////////////////////////////////////////////////////////////
 //// float 1024x1024x1024 
 ////////////////////////////////////////////////////////////////
@@ -478,8 +478,45 @@ __kernel void AddDot_9_1x4(const int K, __global const CL_INPUT_TYPE *aa, const 
         *cp1_pntr += *ap3_pntr * *(bp1_pntr+(p+3)*N);
         *cp2_pntr += *ap3_pntr * *(bp2_pntr+(p+3)*N);
         *cp3_pntr += *ap3_pntr * *(bp3_pntr+(p+3)*N);
-
-
     }
 }
 
+
+////////////////////////////////////////////////////////////////
+//// Optimization 10_3
+////////////////////////////////////////////////////////////////
+//// float 1024x1024x1024 
+////////////////////////////////////////////////////////////////
+
+__kernel void mat_mult_10_3_4x4(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
+    const int col = get_global_id(0) << 2;
+    const int row = get_global_id(1) << 2;
+
+    *(c+N*row+col)     = 0;  *(c+N*row+(col+1))     = 0;  *(c+N*row+(col+2))     = 0;  *(c+N*row+(col+3))     = 0;
+    *(c+(N+1)*row+col) = 0;  *(c+(N+1)*row+(col+1)) = 0;  *(c+(N+1)*row+(col+2)) = 0;  *(c+(N+1)*row+(col+3)) = 0;
+    *(c+(N+2)*row+col) = 0;  *(c+(N+2)*row+(col+1)) = 0;  *(c+(N+2)*row+(col+2)) = 0;  *(c+(N+2)*row+(col+3)) = 0;
+    *(c+(N+3)*row+col) = 0;  *(c+(N+3)*row+(col+1)) = 0;  *(c+(N+3)*row+(col+2)) = 0;  *(c+(N+3)*row+(col+3)) = 0;
+
+    for (int p = 0; p < K; p++) {
+        // row1x4 of c
+        *(c+row*N+col)         += *(a+row*K+p)     * *(b+p*N+col);
+        *(c+row*N+(col+1))     += *(a+row*K+p)     * *(b+p*N+(col+1));
+        *(c+row*N+(col+2))     += *(a+row*K+p)     * *(b+p*N+(col+2));
+        *(c+row*N+(col+3))     += *(a+row*K+p)     * *(b+p*N+(col+3));
+        // row1x4 of c
+        *(c+(row+1)*N+col)     += *(a+(row+1)*K+p) * *(b+p*N+col);
+        *(c+(row+1)*N+(col+1)) += *(a+(row+1)*K+p) * *(b+p*N+(col+1));
+        *(c+(row+1)*N+(col+2)) += *(a+(row+1)*K+p) * *(b+p*N+(col+2));
+        *(c+(row+1)*N+(col+3)) += *(a+(row+1)*K+p) * *(b+p*N+(col+3));
+        // row1x4 of c
+        *(c+(row+2)*N+col)     += *(a+(row+2)*K+p) * *(b+p*N+col);
+        *(c+(row+2)*N+(col+1)) += *(a+(row+2)*K+p) * *(b+p*N+(col+1));
+        *(c+(row+2)*N+(col+2)) += *(a+(row+2)*K+p) * *(b+p*N+(col+2));
+        *(c+(row+2)*N+(col+3)) += *(a+(row+2)*K+p) * *(b+p*N+(col+3));
+        // row1x4 of c
+        *(c+(row+3)*N+col)     += *(a+(row+3)*K+p) * *(b+p*N+col);
+        *(c+(row+3)*N+(col+1)) += *(a+(row+3)*K+p) * *(b+p*N+(col+1));
+        *(c+(row+3)*N+(col+2)) += *(a+(row+3)*K+p) * *(b+p*N+(col+2));
+        *(c+(row+3)*N+(col+3)) += *(a+(row+3)*K+p) * *(b+p*N+(col+3));
+    }
+}
