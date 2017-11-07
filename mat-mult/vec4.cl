@@ -132,13 +132,13 @@ __kernel void mat_mult_vec4x4_continue(const int M, const int N, const int K, __
 
     }
 
-    c[row * N + col] = cc1.s0;      c[row * N + (col+1)] = cc1.s1;      c[row * N + (col+2)] = cc1.s2;      c[row * N + (col+3)] = cc1.s3; 
-    c[(row+1) * N + col] = cc2.s0;  c[(row+1) * N + (col+1)] = cc2.s1;  c[(row+1) * N + (col+2)] = cc2.s2;  c[(row+1) * N + (col+3)] = cc2.s3; 
-    c[(row+2) * N + col] = cc3.s0;  c[(row+2) * N + (col+1)] = cc3.s1;  c[(row+2) * N + (col+2)] = cc3.s2;  c[(row+2) * N + (col+3)] = cc3.s3; 
-    c[(row+3) * N + col] = cc4.s0;  c[(row+3) * N + (col+1)] = cc4.s1;  c[(row+3) * N + (col+2)] = cc4.s2;  c[(row+3) * N + (col+3)] = cc4.s3;  
+    //c[row * N + col] = cc1.s0;      c[row * N + (col+1)] = cc1.s1;      c[row * N + (col+2)] = cc1.s2;      c[row * N + (col+3)] = cc1.s3; 
+    //c[(row+1) * N + col] = cc2.s0;  c[(row+1) * N + (col+1)] = cc2.s1;  c[(row+1) * N + (col+2)] = cc2.s2;  c[(row+1) * N + (col+3)] = cc2.s3; 
+    //c[(row+2) * N + col] = cc3.s0;  c[(row+2) * N + (col+1)] = cc3.s1;  c[(row+2) * N + (col+2)] = cc3.s2;  c[(row+2) * N + (col+3)] = cc3.s3; 
+    //c[(row+3) * N + col] = cc4.s0;  c[(row+3) * N + (col+1)] = cc4.s1;  c[(row+3) * N + (col+2)] = cc4.s2;  c[(row+3) * N + (col+3)] = cc4.s3;  
 
-    //*(__global CL_ELEM_TYPE *)(c + row * N + col) = cc1;
-    //*(__global CL_ELEM_TYPE *)(c + (row+1) * N + col) = cc2;
-    //*(__global CL_ELEM_TYPE *)(c + (row+2) * N + col) = cc3;
-    //*(__global CL_ELEM_TYPE *)(c + (row+3) * N + col) = cc4;
+    *(__global CL_ELEM_TYPE *)(c + row * N + col) = cc1;
+    *(__global CL_ELEM_TYPE *)(c + (row+1) * N + col) = cc2;
+    *(__global CL_ELEM_TYPE *)(c + (row+2) * N + col) = cc3;
+    *(__global CL_ELEM_TYPE *)(c + (row+3) * N + col) = cc4;
 }
