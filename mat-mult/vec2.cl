@@ -152,6 +152,7 @@ __kernel void mat_mult_vec2x2(const int M, const int N, const int K, __global co
 // naive float : 0.59s ; this float2: 0.45s
 // half 1024x1024x1024 0.250268 s 8.580726 GFLOPS
 __kernel void mat_mult_vec2x2_continue(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
+
     const int col = get_global_id(0) << 1;
     const int row = get_global_id(1) << 1;
 
