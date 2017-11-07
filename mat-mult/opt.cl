@@ -306,7 +306,7 @@ __kernel void mat_mult_7_1x4(const int M, const int N, const int K, __global con
 
 __kernel void AddDot_7_1x4(const int K, __global const CL_INPUT_TYPE *aa, const int N, __global const CL_INPUT_TYPE *bb, __global CL_INPUT_TYPE *cc) {
 
-    __global CL_INPUT_TYPE 
+    __global const CL_INPUT_TYPE 
                   *bp0_pntr = &bb[0*N+0],
                   *bp1_pntr = &bb[0*N+1], 
                   *bp2_pntr = &bb[0*N+2], 
@@ -341,19 +341,19 @@ __kernel void mat_mult_72_1x4(const int M, const int N, const int K, __global co
 __kernel void AddDot_72_1x4(const int K, __global const CL_INPUT_TYPE *aa, const int N, __global const CL_INPUT_TYPE *bb, __global CL_INPUT_TYPE *cc) {
     cc[0] = cc[1] = cc[2] = cc[3] = 0;
     __global CL_INPUT_TYPE 
-                  *bp0_pntr = &bb[0*N+0],
-                  *bp1_pntr = &bb[0*N+1], 
-                  *bp2_pntr = &bb[0*N+2], 
-                  *bp3_pntr = &bb[0*N+3],
+                  *bp0_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+0],
+                  *bp1_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+1], 
+                  *bp2_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+2], 
+                  *bp3_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+3],
                   *ap0_pntr,
-                  *cp0_pntr = &cc[0],
-                  *cp1_pntr = &cc[1],
-                  *cp2_pntr = &cc[2],
-                  *cp3_pntr = &cc[3];
+                  *cp0_pntr = (__global CL_INPUT_TYPE *)&cc[0],
+                  *cp1_pntr = (__global CL_INPUT_TYPE *)&cc[1],
+                  *cp2_pntr = (__global CL_INPUT_TYPE *)&cc[2],
+                  *cp3_pntr = (__global CL_INPUT_TYPE *)&cc[3];
 
 
     for (int p = 0; p < K; p++) {
-        ap0_pntr = &aa[p];
+        ap0_pntr = (__global CL_INPUT_TYPE *)&aa[p];
         *cp0_pntr += *ap0_pntr * *(bp0_pntr+p*N);
         *cp1_pntr += *ap0_pntr * *(bp1_pntr+p*N);
         *cp2_pntr += *ap0_pntr * *(bp2_pntr+p*N);
@@ -380,15 +380,15 @@ __kernel void mat_mult_8_1x4(const int M, const int N, const int K, __global con
 __kernel void AddDot_8_1x4(const int K, __global const CL_INPUT_TYPE *aa, const int N, __global const CL_INPUT_TYPE *bb, __global CL_INPUT_TYPE *cc) {
     cc[0] = cc[1] = cc[2] = cc[3] = 0;
     __global CL_INPUT_TYPE 
-                  *bp0_pntr = &bb[0*N+0],
-                  *bp1_pntr = &bb[0*N+1], 
-                  *bp2_pntr = &bb[0*N+2], 
-                  *bp3_pntr = &bb[0*N+3],
+                  *bp0_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+0],
+                  *bp1_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+1], 
+                  *bp2_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+2], 
+                  *bp3_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+3],
                   *ap0_pntr,
                   *ap1_pntr,
                   *ap2_pntr,
                   *ap3_pntr,
-                  *cp0_pntr = &cc[0*N+0], *cp1_pntr = &cc[0*N+1], *cp2_pntr = &cc[0*N+2], *cp3_pntr = &cc[0*N+3];
+                  *cp0_pntr = (__global CL_INPUT_TYPE *)&cc[0*N+0], *cp1_pntr = (__global CL_INPUT_TYPE *)&cc[0*N+1], *cp2_pntr = (__global CL_INPUT_TYPE *)&cc[0*N+2], *cp3_pntr = (__global CL_INPUT_TYPE *)&cc[0*N+3];
 
                   //*cp00_pntr = &cc[0*N+0], *cp01_pntr = &cc[0*N+1], *cp02_pntr = &cc[0*N+2], *cp03_pntr = &cc[0*N+3],
                   //*cp10_pntr = &cc[1*N+0], *cp11_pntr = &cc[1*N+1], *cp12_pntr = &cc[1*N+2], *cp13_pntr = &cc[1*N+3],
@@ -397,25 +397,25 @@ __kernel void AddDot_8_1x4(const int K, __global const CL_INPUT_TYPE *aa, const 
 
 
     for (int p = 0; p < K; p+=4) {
-        ap0_pntr = &aa[p];
+        ap0_pntr = (__global CL_INPUT_TYPE *)&aa[p];
         *cp0_pntr += *ap0_pntr * *(bp0_pntr+p*N);
         *cp1_pntr += *ap0_pntr * *(bp1_pntr+p*N);
         *cp2_pntr += *ap0_pntr * *(bp2_pntr+p*N);
         *cp3_pntr += *ap0_pntr * *(bp3_pntr+p*N);
 
-        ap1_pntr = &aa[p+1];
+        ap1_pntr = (__global CL_INPUT_TYPE *)&aa[p+1];
         *cp0_pntr += *ap1_pntr * *(bp0_pntr+(p+1)*N);
         *cp1_pntr += *ap1_pntr * *(bp1_pntr+(p+1)*N);
         *cp2_pntr += *ap1_pntr * *(bp2_pntr+(p+1)*N);
         *cp3_pntr += *ap1_pntr * *(bp3_pntr+(p+1)*N);
       
-        ap2_pntr = &aa[p+2];
+        ap2_pntr = (__global CL_INPUT_TYPE *)&aa[p+2];
         *cp0_pntr += *ap2_pntr * *(bp0_pntr+(p+2)*N);
         *cp1_pntr += *ap2_pntr * *(bp1_pntr+(p+2)*N);
         *cp2_pntr += *ap2_pntr * *(bp2_pntr+(p+2)*N);
         *cp3_pntr += *ap2_pntr * *(bp3_pntr+(p+2)*N);
 
-        ap3_pntr = &aa[p+3];
+        ap3_pntr = (__global CL_INPUT_TYPE *)&aa[p+3];
         *cp0_pntr += *ap3_pntr * *(bp0_pntr+(p+3)*N);
         *cp1_pntr += *ap3_pntr * *(bp1_pntr+(p+3)*N);
         *cp2_pntr += *ap3_pntr * *(bp2_pntr+(p+3)*N);
@@ -444,36 +444,36 @@ __kernel void mat_mult_9_1x4(const int M, const int N, const int K, __global con
 __kernel void AddDot_9_1x4(const int K, __global const CL_INPUT_TYPE *aa, const int N, __global const CL_INPUT_TYPE *bb, __global CL_INPUT_TYPE *cc) {
     cc[0] = cc[1] = cc[2] = cc[3] = 0;
     __global CL_INPUT_TYPE 
-                  *bp0_pntr = &bb[0*N+0],
-                  *bp1_pntr = &bb[0*N+1], 
-                  *bp2_pntr = &bb[0*N+2], 
-                  *bp3_pntr = &bb[0*N+3],
+                  *bp0_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+0],
+                  *bp1_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+1], 
+                  *bp2_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+2], 
+                  *bp3_pntr = (__global CL_INPUT_TYPE *)&bb[0*N+3],
                   *ap0_pntr,
                   *ap1_pntr,
                   *ap2_pntr,
                   *ap3_pntr,
-                  *cp0_pntr = &cc[0*N+0], *cp1_pntr = &cc[0*N+1], *cp2_pntr = &cc[0*N+2], *cp3_pntr = &cc[0*N+3];
+                  *cp0_pntr = (__global CL_INPUT_TYPE *)&cc[0*N+0], *cp1_pntr = (__global CL_INPUT_TYPE *)&cc[0*N+1], *cp2_pntr = (__global CL_INPUT_TYPE *)&cc[0*N+2], *cp3_pntr = (__global CL_INPUT_TYPE *)&cc[0*N+3];
 
     for (int p = 0; p < K; p+=4) {
-        ap0_pntr = &aa[p];
+        ap0_pntr = (__global CL_INPUT_TYPE *)&aa[p];
         *cp0_pntr += *ap0_pntr * *(bp0_pntr+p*N);
         *cp1_pntr += *ap0_pntr * *(bp1_pntr+p*N);
         *cp2_pntr += *ap0_pntr * *(bp2_pntr+p*N);
         *cp3_pntr += *ap0_pntr * *(bp3_pntr+p*N);
 
-        ap1_pntr = &aa[p+1];
+        ap1_pntr = (__global CL_INPUT_TYPE *)&aa[p+1];
         *cp0_pntr += *ap1_pntr * *(bp0_pntr+(p+1)*N);
         *cp1_pntr += *ap1_pntr * *(bp1_pntr+(p+1)*N);
         *cp2_pntr += *ap1_pntr * *(bp2_pntr+(p+1)*N);
         *cp3_pntr += *ap1_pntr * *(bp3_pntr+(p+1)*N);
       
-        ap2_pntr = &aa[p+2];
+        ap2_pntr = (__global CL_INPUT_TYPE *)&aa[p+2];
         *cp0_pntr += *ap2_pntr * *(bp0_pntr+(p+2)*N);
         *cp1_pntr += *ap2_pntr * *(bp1_pntr+(p+2)*N);
         *cp2_pntr += *ap2_pntr * *(bp2_pntr+(p+2)*N);
         *cp3_pntr += *ap2_pntr * *(bp3_pntr+(p+2)*N);
 
-        ap3_pntr = &aa[p+3];
+        ap3_pntr = (__global CL_INPUT_TYPE *)&aa[p+3];
         *cp0_pntr += *ap3_pntr * *(bp0_pntr+(p+3)*N);
         *cp1_pntr += *ap3_pntr * *(bp1_pntr+(p+3)*N);
         *cp2_pntr += *ap3_pntr * *(bp2_pntr+(p+3)*N);
@@ -485,38 +485,76 @@ __kernel void AddDot_9_1x4(const int K, __global const CL_INPUT_TYPE *aa, const 
 ////////////////////////////////////////////////////////////////
 //// Optimization 10_3
 ////////////////////////////////////////////////////////////////
-//// float 1024x1024x1024 
+//// float 1024x1024x1024 low efficient verison
+//// 1024x1024x1024 2.709294 s 0.792636 GFLOPS 
 ////////////////////////////////////////////////////////////////
 
 __kernel void mat_mult_10_3_4x4(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 2;
     const int row = get_global_id(1) << 2;
 
-    *(c+N*row+col)     = 0;  *(c+N*row+(col+1))     = 0;  *(c+N*row+(col+2))     = 0;  *(c+N*row+(col+3))     = 0;
-    *(c+(N+1)*row+col) = 0;  *(c+(N+1)*row+(col+1)) = 0;  *(c+(N+1)*row+(col+2)) = 0;  *(c+(N+1)*row+(col+3)) = 0;
-    *(c+(N+2)*row+col) = 0;  *(c+(N+2)*row+(col+1)) = 0;  *(c+(N+2)*row+(col+2)) = 0;  *(c+(N+2)*row+(col+3)) = 0;
-    *(c+(N+3)*row+col) = 0;  *(c+(N+3)*row+(col+1)) = 0;  *(c+(N+3)*row+(col+2)) = 0;  *(c+(N+3)*row+(col+3)) = 0;
+    //*(c+row*N+col)     = 0;  *(c+row*N+(col+1))     = 0;  *(c+row*N+(col+2))     = 0;  *(c+row*N+(col+3))     = 0;
+    //*(c+(row+1)*N+col) = 0;  *(c+(row+1)*N+(col+1)) = 0;  *(c+(row+1)*N+(col+2)) = 0;  *(c+(row+1)*N+(col+3)) = 0;
+    //*(c+(row+2)*N+col) = 0;  *(c+(row+2)*N+(col+1)) = 0;  *(c+(row+2)*N+(col+2)) = 0;  *(c+(row+2)*N+(col+3)) = 0;
+    //*(c+(row+3)*N+col) = 0;  *(c+(row+3)*N+(col+1)) = 0;  *(c+(row+3)*N+(col+2)) = 0;  *(c+(row+3)*N+(col+3)) = 0;
+
+    
 
     for (int p = 0; p < K; p++) {
-        // row1x4 of c
+        // 1st row of c
         *(c+row*N+col)         += *(a+row*K+p)     * *(b+p*N+col);
         *(c+row*N+(col+1))     += *(a+row*K+p)     * *(b+p*N+(col+1));
         *(c+row*N+(col+2))     += *(a+row*K+p)     * *(b+p*N+(col+2));
         *(c+row*N+(col+3))     += *(a+row*K+p)     * *(b+p*N+(col+3));
-        // row1x4 of c
+        // 2nd row of c
         *(c+(row+1)*N+col)     += *(a+(row+1)*K+p) * *(b+p*N+col);
         *(c+(row+1)*N+(col+1)) += *(a+(row+1)*K+p) * *(b+p*N+(col+1));
         *(c+(row+1)*N+(col+2)) += *(a+(row+1)*K+p) * *(b+p*N+(col+2));
         *(c+(row+1)*N+(col+3)) += *(a+(row+1)*K+p) * *(b+p*N+(col+3));
-        // row1x4 of c
+        // 3rd row of c
         *(c+(row+2)*N+col)     += *(a+(row+2)*K+p) * *(b+p*N+col);
         *(c+(row+2)*N+(col+1)) += *(a+(row+2)*K+p) * *(b+p*N+(col+1));
         *(c+(row+2)*N+(col+2)) += *(a+(row+2)*K+p) * *(b+p*N+(col+2));
         *(c+(row+2)*N+(col+3)) += *(a+(row+2)*K+p) * *(b+p*N+(col+3));
-        // row1x4 of c
+        // 4th row of c
         *(c+(row+3)*N+col)     += *(a+(row+3)*K+p) * *(b+p*N+col);
         *(c+(row+3)*N+(col+1)) += *(a+(row+3)*K+p) * *(b+p*N+(col+1));
         *(c+(row+3)*N+(col+2)) += *(a+(row+3)*K+p) * *(b+p*N+(col+2));
         *(c+(row+3)*N+(col+3)) += *(a+(row+3)*K+p) * *(b+p*N+(col+3));
     }
+}
+
+////////////////////////////////////////////////////////////////
+////
+////////////////////////////////////////////////////////////////
+
+__kernel void mat_mult_10_4_4x4(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
+    const int col = get_global_id(0) << 2;
+    const int row = get_global_id(1) << 2;
+
+    CL_INPUT_TYPE
+        c00 = 0, c01 = 0, c02 = 0, c03 = 0,
+        c10 = 0, c11 = 0, c12 = 0, c13 = 0,
+        c20 = 0, c21 = 0, c22 = 0, c23 = 0,
+        c30 = 0, c31 = 0, c32 = 0, c33 = 0;
+
+    for (int p = 0; p < K; p++) {
+
+        CL_INPUT_TYPE 
+            a00 = *(a+row*K+p), 
+            a10 = *(a+(row+1)*K+p), 
+            a20 = *(a+(row+2)*K+p), 
+            a30 = *(a+(row+3)*K+p),  
+
+            b00 = *(b+p*N+col),  b01 = *(b+p*N+(col+1)),  b02 = *(b+p*N+(col+2)),  b03 = *(b+p*N+(col+3));
+        
+        c00 += a00 * b00; c01 += a00 * b01; c02 += a00 * b02; c03 += a00 * b03;
+        c10 += a10 * b00; c11 += a10 * b01; c12 += a10 * b02; c13 += a10 * b03;
+        c20 += a20 * b00; c21 += a20 * b01; c22 += a20 * b02; c23 += a20 * b03;
+        c30 += a30 * b00; c31 += a30 * b01; c32 += a30 * b02; c33 += a30 * b03;
+    }
+    c[row*N+col] = c00;     c[row*N+(col+1)] = c01;     c[row*N+(col+2)] = c02;     c[row*N+(col+3)] = c03;
+    c[(row+1)*N+col] = c10; c[(row+1)*N+(col+1)] = c11; c[(row+1)*N+(col+2)] = c12; c[(row+1)*N+(col+3)] = c13;
+    c[(row+2)*N+col] = c20; c[(row+2)*N+(col+1)] = c21; c[(row+2)*N+(col+2)] = c22; c[(row+2)*N+(col+3)] = c23;
+    c[(row+3)*N+col] = c30; c[(row+3)*N+(col+1)] = c31; c[(row+3)*N+(col+2)] = c32; c[(row+3)*N+(col+3)] = c33;
 }
