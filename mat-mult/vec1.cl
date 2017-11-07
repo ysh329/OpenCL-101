@@ -1,6 +1,7 @@
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
-
+// float 1024x1024x1024 0.703824 s 3.051168 GFLOPS
+// half  1024x1024x1024 0.606415 s 3.541280 GFLOPS 
 __kernel void mat_mult_naive(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0);
     const int row = get_global_id(1);
@@ -12,7 +13,7 @@ __kernel void mat_mult_naive(const int M, const int N, const int K, __global con
     c[row * N + col] = res;
 }
 
-
+/*
 __kernel void mat_mult_naive4(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0);
     const int row = get_global_id(1);
@@ -37,4 +38,4 @@ __kernel void mat_mult_naive4(const int M, const int N, const int K, __global co
     }
     c[row * N + col] = res.s0 + res.s1 + res.s2 + res.s3;
 }
-
+*/
