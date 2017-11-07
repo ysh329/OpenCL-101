@@ -30,7 +30,7 @@
 
 /*=================== INITIALIZATION ======================*/
 #define     ELEM_RAND_RANGE                 (100)
-#define     ELEM_INIT_VALUE                 (1)
+#define     ELEM_INIT_VALUE                 (0)
 
 /*=================== MACRO FUNCTION ======================*/
 #define     PRINT_LINE(title)               printf("============== %s ==============\n", title)
@@ -284,7 +284,12 @@ int main(int argc, char *argv[]) {
     // Memory buffer
     a_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, data_size_a, NULL, &ret);
     b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, data_size_b, NULL, &ret);
-    c_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, data_size_c, NULL, &ret);
+    c_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_c, NULL, &ret);
+
+#ifndef DONT_PRINT_MATRIX_FLAG
+    printf("==========================\n");
+    print_mat(c_d, n, m);
+#endif
 
     ret = clEnqueueWriteBuffer(command_queue, a_buffer, CL_TRUE, 0, data_size_a, (void *)a, 0, NULL, NULL);
     ret |= clEnqueueWriteBuffer(command_queue, b_buffer, CL_TRUE, 0, data_size_b, (void *)b, 0, NULL, NULL);
