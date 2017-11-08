@@ -89,7 +89,7 @@ int equal_mat(ELEM_TYPE *a, ELEM_TYPE *b, int width, int height) {
 int equal_vec(ELEM_TYPE *a, ELEM_TYPE *b, int len) {
     int correct_num = 0;
     for (int idx = 0; idx < len; idx++) 
-        if (a[idx] == b[idx])
+        if (a[idx] - b[idx] < 1.0)
             correct_num += 1;
 
     float correct_rate = (float) correct_num / (float) len;
