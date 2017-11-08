@@ -18,7 +18,7 @@
 #define     ELEM_TYPE_STR                   "float"
 // Type on Device (GPU)
 #define     CL_ELEM_TYPE                    cl_float
-#define     CL_ELEM_TYPE_STR                "float"
+#define     CL_ELEM_TYPE_STR                "float4"
 
 /*=================== OTHER OCL PARAMETERS ================*/
 #define     CL_OTHER_MACRO                  ""//" -cl-mad-enable"
@@ -29,7 +29,7 @@
 #define     OCL_BUILD_LOG_MAX_LEN           (16348)
 
 /*=================== INITIALIZATION ======================*/
-#define     ELEM_RAND_RANGE                 (100)
+#define     ELEM_RAND_RANGE                 (10)
 #define     ELEM_INIT_VALUE                 (0)
 
 /*=================== MACRO FUNCTION ======================*/
@@ -91,9 +91,9 @@ int main(int argc, char *argv[]) {
         strcpy(kernel_func, argv[5]);
         cpu_run_num = atoi( argv[6] );
         gpu_run_num = atoi( argv[7] );
-        global_work_size[0] = atoi( argv[8] );
-        global_work_size[1] = atoi( argv[9] );
-        global_work_size[2] = atoi( argv[10] );
+        global_work_size[0] = atoi( argv[9] );  // M: global_work_size[1]
+        global_work_size[1] = atoi( argv[8] );  // N: global_work_size[0]
+        global_work_size[2] = atoi( argv[10] ); // K: global_work_size[2]
     }
     else {
         printf(">>> [USAGE] %s M N K KERNEL_FILE_PATH KERNEL_FUNC_NAME CPU_BENCHMARK_TIMES GPU_BENCHMARK_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
