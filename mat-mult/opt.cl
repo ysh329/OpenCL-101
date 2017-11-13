@@ -525,7 +525,9 @@ __kernel void mat_mult_10_3_4x4(const int M, const int N, const int K, __global 
 }
 
 ////////////////////////////////////////////////////////////////
-////
+//// without global def
+//// float 1024x1024x1024 0.409224 s 5.247691 GFLOPS
+//// half 1024x1024x1024 0.300465 s 7.147196 GFLOPS
 ////////////////////////////////////////////////////////////////
 
 __kernel void mat_mult_10_4_4x4(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
@@ -552,6 +554,62 @@ __kernel void mat_mult_10_4_4x4(const int M, const int N, const int K, __global 
         c10 += a10 * b00; c11 += a10 * b01; c12 += a10 * b02; c13 += a10 * b03;
         c20 += a20 * b00; c21 += a20 * b01; c22 += a20 * b02; c23 += a20 * b03;
         c30 += a30 * b00; c31 += a30 * b01; c32 += a30 * b02; c33 += a30 * b03;
+    }
+    c[row*N+col] = c00;     c[row*N+(col+1)] = c01;     c[row*N+(col+2)] = c02;     c[row*N+(col+3)] = c03;
+    c[(row+1)*N+col] = c10; c[(row+1)*N+(col+1)] = c11; c[(row+1)*N+(col+2)] = c12; c[(row+1)*N+(col+3)] = c13;
+    c[(row+2)*N+col] = c20; c[(row+2)*N+(col+1)] = c21; c[(row+2)*N+(col+2)] = c22; c[(row+2)*N+(col+3)] = c23;
+    c[(row+3)*N+col] = c30; c[(row+3)*N+(col+1)] = c31; c[(row+3)*N+(col+2)] = c32; c[(row+3)*N+(col+3)] = c33;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//// bugs: casting 'const __global float *' to type 'float *' changes address space of pointer
+////        b01_pntr = ( (CL_INPUT_TYPE *)(b)+p*N+(col+1));
+////
+//////////////////////////////////////////////////////////////////////////////////////////
+
+__kernel void mat_mult_10_7_4x4(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
+    const int col = get_global_id(0) << 2;
+    const int row = get_global_id(1) << 2;
+
+    CL_INPUT_TYPE
+
+        c00 = 0, c01 = 0, c02 = 0, c03 = 0,
+        c10 = 0, c11 = 0, c12 = 0, c13 = 0,
+        c20 = 0, c21 = 0, c22 = 0, c23 = 0,
+        c30 = 0, c31 = 0, c32 = 0, c33 = 0,
+
+        a00,
+        a10,
+        a20,
+        a30,
+
+        //b00, b01, b02, b03;
+        *b00_pntr, *b01_pntr, *b02_pntr, *b03_pntr;
+
+    for (int p = 0; p < K; p++) {
+
+        a00 = *(a+row*K+p);
+        a10 = *(a+(row+1)*K+p);
+        a20 = *(a+(row+2)*K+p); 
+        a30 = *(a+(row+3)*K+p);  
+
+        //b00 = *(b+p*N+col),  b01 = *(b+p*N+(col+1)),  b02 = *(b+p*N+(col+2)),  b03 = *(b+p*N+(col+3));
+        //c00 += a00 * b00; c01 += a00 * b01; c02 += a00 * b02; c03 += a00 * b03;
+        //c10 += a10 * b00; c11 += a10 * b01; c12 += a10 * b02; c13 += a10 * b03;
+        //c20 += a20 * b00; c21 += a20 * b01; c22 += a20 * b02; c23 += a20 * b03;
+        //c30 += a30 * b00; c31 += a30 * b01; c32 += a30 * b02; c33 += a30 * b03;
+
+        b00_pntr = ( (CL_INPUT_TYPE *)(b)+p*N+col);
+        b01_pntr = ( (CL_INPUT_TYPE *)(b)+p*N+(col+1));
+        b02_pntr = ( (CL_INPUT_TYPE *)(b)+p*N+(col+2));
+        b03_pntr = ( (CL_INPUT_TYPE *)(b)+p*N+(col+3));
+
+        c00 += a00 * *(b00_pntr); c01 += a00 * *(b01_pntr); c02 += a00 * *(b02_pntr); c03 += a00 * *(b03_pntr);
+        c10 += a10 * *(b00_pntr); c11 += a10 * *(b01_pntr); c12 += a10 * *(b02_pntr); c13 += a10 * *(b03_pntr);
+        c20 += a20 * *(b00_pntr); c21 += a20 * *(b01_pntr); c22 += a20 * *(b02_pntr); c23 += a20 * *(b03_pntr);
+        c30 += a30 * *(b00_pntr); c31 += a30 * *(b01_pntr); c32 += a30 * *(b02_pntr); c33 += a30 * *(b03_pntr);
+       
     }
     c[row*N+col] = c00;     c[row*N+(col+1)] = c01;     c[row*N+(col+2)] = c02;     c[row*N+(col+3)] = c03;
     c[(row+1)*N+col] = c10; c[(row+1)*N+(col+1)] = c11; c[(row+1)*N+(col+2)] = c12; c[(row+1)*N+(col+3)] = c13;
