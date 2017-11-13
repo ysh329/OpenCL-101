@@ -26,8 +26,14 @@ __kernel void mat_mult_vec4(const int M, const int N, const int K, __global cons
     c[row * N + col] = res.s0 + res.s1 + res.s2 + res.s3;
 }
 
-// float4: 1024x1024x1024 0.259872 s 8.263633 GFLOPS
+// float4: 1024x1024x1024 0.259872 s  8.263633 GFLOPS
 // half4:  1024x1024x1024 0.145462 s 14.763193 GFLOPS
+// ACL:
+// FP32:   1024x1024x1024 0.084823 s
+// FP16:   1024x1024x1024 0.039247 s
+// OpenBLAS OMP 1 A72
+// FP32:   1024x1024x1024 0.193891 s 11.075726 GFLOPS
+// FP16:   
 __kernel void mat_mult_vec4x4_continue(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0) << 2;
     const int row = get_global_id(1) << 2;
