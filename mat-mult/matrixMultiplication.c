@@ -14,11 +14,11 @@
 
 /*===================  CHANGE TYPE HERE ===================*/
 // Type on Host (CPU)
-#define     ELEM_TYPE                       float
-#define     ELEM_TYPE_STR                   "float"
+#define     ELEM_TYPE                       __fp16
+#define     ELEM_TYPE_STR                   "__fp16"
 // Type on Device (GPU)
-#define     CL_ELEM_TYPE                    cl_float
-#define     CL_ELEM_TYPE_STR                "float4"
+#define     CL_ELEM_TYPE                    cl_half
+#define     CL_ELEM_TYPE_STR                "half4"
 
 /*=================== OTHER OCL PARAMETERS ================*/
 #define     CL_OTHER_MACRO                  ""//" -cl-mad-enable"

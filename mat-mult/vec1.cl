@@ -13,6 +13,19 @@ __kernel void mat_mult_naive(const int M, const int N, const int K, __global con
     c[row * N + col] = res;
 }
 
+__kernel void mat_mult_naive_trans(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *bT, __global CL_INPUT_TYPE *c) {
+    const int col = get_global_id(0);
+    const int row = get_global_id(1);
+
+    CL_ELEM_TYPE res = 0;
+
+    for (int p = 0; p < K; p++) {
+        bT[col * K + p] = b[N * p + col];
+        res += a[row * M + p] * bT[col * K + p];
+    }
+    c[row * N + col] = res;
+}
+
 /*
 __kernel void mat_mult_naive4(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0);

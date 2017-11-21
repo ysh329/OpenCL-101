@@ -628,3 +628,11 @@ __kernel void mat_mult_vec8x8_continue(const int M, const int N, const int K, __
     *(__global CL_ELEM_TYPE *)(c + (row+7) * N + col) = cc8;
 
 }
+
+
+
+////////////////////////////////////////
+//// without global
+////////////////////////////////////////
+
+
