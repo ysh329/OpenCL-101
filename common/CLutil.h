@@ -11,21 +11,26 @@
 #include <CL/cl.h>
 #endif
 
-#define     ERROR_LEN                (1024)
-//#define 
+#define     OCL_ERROR_LEN                (1024)
+#define     BUFFER_LEN                   (1024)
 
-char BufferError[ERROR_LEN];
-cl_int status;
-cl_context g_context;
-cl_command_queue g_queue;
-cl_program program;
+#define     PRINT_INFO(content)          printf(">>> [INFO] %s\n", content)
 
+void print_gpu_info(char *cat_gpu_info) {
+    FILE *fp;
+    char buffer[BUFFER_LEN];
+
+    fp = popen(cat_gpu_info, "r");
+    char *ret_ = fgets(buffer, sizeof(buffer), fp);
+    printf(">>> [INFO] Device name: %s", buffer);
+    pclose(fp);
+}
 
 void checkErr(cl_int err,const char *name)
 {
 	if(err != CL_SUCCESS)
 	{
-		printf("Error: %s %d",name,err);
+		printf(">>> [ERROR] %s %d", name, err);
 		switch(err)
 		{
 			case CL_DEVICE_NOT_FOUND :printf("(CL_DEVICE_NOT_FOUND)");break;
@@ -58,82 +63,85 @@ void checkErr(cl_int err,const char *name)
 			case CL_INVALID_EVENT_WAIT_LIST:printf("(CL_INVALID_EVENT_WAIT_LIST)");break;
 			case CL_MISALIGNED_SUB_BUFFER_OFFSET:printf("(CL_MISALIGNED_SUB_BUFFER_OFFSET)");break;
 
-			default:
-												 break;
+			default: break;
 		}
 		printf("\n");
 		exit(1);
 	}
 }
 
-char* ReadSources(const char* fileName)
+char* load_cl_source(const char* fileName)
 {
-	FILE *file=fopen(fileName,"rb");
-	if(!file)
+	FILE *file = fopen(fileName, "rb");
+	if( !file )
 	{
-		printf("ERROR:Failed to open file '%s'\n",fileName);
+		printf(">>> [ERROR] Failed to open file '%s'\n", fileName);
 		return NULL;
 	}
 
 	if(fseek(file,0,SEEK_END))
 	{
-		printf("ERROR: Failed to open file '%s'\n",fileName);
+		printf(">>> [ERROR] Failed to open file '%s'\n",fileName);
 		fclose(file);
 		return NULL;
 	}
 
-	long size=ftell(file);
-	if(size==0)
+	long size = ftell(file);
+	if(size == 0)
 	{
-		printf("ERROR: Failed to check position on file '%s'\n",fileName);
+		printf(">>> [ERROR] Failed to check position on file '%s'\n", fileName);
 		fclose(file);
 		return NULL;
 	}
 
 	rewind(file);
 
-	char *src=(char *)malloc(sizeof(char)*size+1);
-	if(!src)
+	char *src = (char *)malloc(sizeof(char) * size + 1);
+	if( !src )
 	{
-		printf("ERROR: Failed to allocate memory for file '%s'\n",fileName);
+		printf(">>> [ERROR] Failed to allocate memory for file '%s'\n", fileName);
 		fclose(file);
 		return NULL;
 	}
 
-	size_t res=fread(src,1,sizeof(char) *size,file);
-	if(res !=sizeof (char) * size)
+	size_t res = fread(src, 1, sizeof(char) * size, file);
+	if(res != sizeof(char)*size)
 	{
-		printf("ERROR: Failed to read file '%s'\n",fileName);
+		printf(">>> [ERROR] Failed to read file '%s'\n", fileName);
 		fclose(file);
 		free(src);
 		return NULL;
 	}
 
-	src[size]='\0';/*NULL terminated */
+	src[size] = '\0';/*NULL terminated */
 	fclose(file);
 
 	return src;
 }
 
-int openCLCreate(cl_context* context,cl_command_queue* queue,const char* inputfile)
-{
-	cl_int status;
-	cl_platform_id platform=NULL;
-	cl_device_id *device;
-	cl_uint numPlatforms,numdevices;
+int opencl_create(cl_context* context, cl_command_queue* queue, cl_program* program, const char* inputfile)
+{    
+    char              BufferError[OCL_ERROR_LEN];
+	cl_int            status;
+    cl_platform_id   *platforms = NULL;
+	cl_platform_id    platform = NULL;
+	cl_device_id     *device;
+	cl_uint           numPlatforms;
+    cl_uint           numdevices;
 
-	status=clGetPlatformIDs(0,NULL,&numPlatforms);
-	checkErr(status,"clGetPlatformIDs()");
-	if(numPlatforms>0)
+	status = clGetPlatformIDs(0, NULL, &numPlatforms);
+	checkErr(status, "clGetPlatformIDs()");
+
+	if(numPlatforms > 0)
 	{
-		cl_platform_id*  platforms=(cl_platform_id*)malloc(numPlatforms*sizeof(cl_platform_id));
-		status =clGetPlatformIDs(numPlatforms,platforms,NULL);
-		if(status !=CL_SUCCESS)
+		platforms = (cl_platform_id*)malloc(numPlatforms * sizeof(cl_platform_id));
+		status = clGetPlatformIDs(numPlatforms, platforms, NULL);
+		if(status != CL_SUCCESS)
 		{
-			printf("Error:Getting platform Ids.(clGetPlatformsIDs)\n");
+			printf(">>> [ERROR] Getting platform Ids.(clGetPlatformsIDs)\n");
 			return -1;
 		}
-		for(unsigned int i=0; i<numPlatforms;++i)
+		for(unsigned int i=0; i < numPlatforms; ++i)
 		{
 			char pbuff[100];
 			status = clGetPlatformInfo(
@@ -143,42 +151,42 @@ int openCLCreate(cl_context* context,cl_command_queue* queue,const char* inputfi
 					pbuff,
 					NULL
 					);
-			platform=platforms[i];
-			if(!strcmp(pbuff,"Advanced Micro Devices,Inc."))
+			platform = platforms[i];
+			if( !strcmp(pbuff,"Advanced Micro Devices,Inc.") )
 			{
 				break;
 			} 
 		}
-		delete platforms;
+		free(platforms);
 	}
 
-	status=clGetDeviceIDs(platform,CL_DEVICE_TYPE_GPU,0,NULL,&numdevices);
-	checkErr(status,"clGetDeviceIDs()");
+	status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 0, NULL, &numdevices);
+	checkErr(status, "clGetDeviceIDs()");
 
-	device=(cl_device_id *)malloc(numdevices*sizeof(cl_device_id));
-	status=clGetDeviceIDs(platform,CL_DEVICE_TYPE_GPU,numdevices,device,NULL);
+	device = (cl_device_id *)malloc(numdevices * sizeof(cl_device_id));
+	status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, numdevices, device, NULL);
 
-	*context=clCreateContext(NULL,numdevices,device,NULL,NULL,&status);
-	checkErr(status,"clCreateContext()");
+	*context = clCreateContext(NULL, numdevices, device, NULL, NULL, &status);
+	checkErr(status, "clCreateContext()");
 
-	*queue=clCreateCommandQueue(*context,device[1],CL_QUEUE_PROFILING_ENABLE,&status);
-	checkErr(status,"clCreateCommandQueue()");
+	*queue = clCreateCommandQueue(*context, device[1], CL_QUEUE_PROFILING_ENABLE, &status);
+    //clCreateCommandQueueWithProperties
+	checkErr(status, "clCreateCommandQueue()");
 
-	char *program_source=ReadSources((const char*)inputfile);
+	char *program_source = load_cl_source( (const char*)inputfile );
 
-	program=clCreateProgramWithSource(g_context,1,(const char**)&program_source,NULL,&status);
-	checkErr(status,"clCreateProgramWithSource");
+	*program = clCreateProgramWithSource(*context, 1, (const char**)&program_source, NULL, &status);
+	checkErr(status, "clCreateProgramWithSource");
 
-	status=clBuildProgram(program,1,&device[1],NULL,NULL,NULL);
-
-	if(status !=CL_SUCCESS)
+	status = clBuildProgram(*program, 1, &device[1], NULL, NULL, NULL);
+	if(status != CL_SUCCESS)
 	{
-		printf("Error: build kernel fails\n");
+		printf(">>> [ERROR] build kernel fails\n");
 		size_t len;
-		clGetProgramBuildInfo(program,*device,CL_PROGRAM_BUILD_LOG,sizeof(BufferError),BufferError,&len);
-		BufferError[len]='\0';
-		printf("%s",BufferError);
-		checkErr(status,"clBuildProgram");
+		clGetProgramBuildInfo(*program, *device, CL_PROGRAM_BUILD_LOG, sizeof(BufferError), BufferError, &len);
+		BufferError[len] = '\0';
+		printf("%s", BufferError);
+		checkErr(status, "clBuildProgram");
 		getchar();
 		return -1;
 	}
