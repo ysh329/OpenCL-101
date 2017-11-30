@@ -39,12 +39,13 @@
 /*================= EXECUTION MODE ====================*/
 #define     DEBUG
 #define     MATRIX_MULT_CPU_ENABLE
+#define     MATRIX_TRANS_CPU_ENABLE
 #define     MATRIX_TRANS_GPU_ENABLE
 #define     MATRIX_MULT_GPU_ENABLE
 
 #define     BENCHMARK
 #define     PRINT_EACH_BENCHMARK
-//#define     DONT_PRINT_MATRIX_FLAG
+#define     DONT_PRINT_MATRIX_FLAG
 #define     BENCHMARK_SKIP_TIMES             (1)
 
 /*================= USER DEFINITION LIB ===============*/
@@ -190,7 +191,6 @@ int main(int argc, char *argv[]) {
     printf("c_d:\n");    print_mat(c_d, n, m);
 #endif // DONT_PRINT_MATRIX_FLAG
 
-    // cpu
 #ifdef MATRIX_MULT_CPU_ENABLE
     PRINT_LINE("CPU RESULT");
     printf(">>> [INFO] %d times %s starting...\n", (int)cpu_run_num, "CPU");
@@ -217,23 +217,24 @@ int main(int argc, char *argv[]) {
     gflops = gflops / ave_duration *1.0e-9;
     gbps = 0;
     printf(">>> [INFO] %s %dx%dx%d %2.6lf s %2.6lf GFLOPS\n\n", "CPU", (int)m, (int)n, (int)k, ave_duration, gflops);
-#endif // MATRIX_MULT_CPU_ENABLE
 
-#ifndef DONT_PRINT_MATRIX_FLAG
+    #ifndef DONT_PRINT_MATRIX_FLAG
     printf("c_h:\n");    
     print_mat(c_h, n, m);
-#endif // DONT_PRINT_MATRIX_FLAG
+    #endif // DONT_PRINT_MATRIX_FLAG
+
+#endif // MATRIX_MULT_CPU_ENABLE
 
 
-
-// Transpose Matrix B
+#ifdef MATRIX_TRANS_CPU_ENABLE
+    // Transpose Matrix B
     PRINT_LINE("Transpose Matrix B");
-#ifndef DONT_PRINT_MATRIX_FLAG
-    printf("b:\n");
-    print_mat(b, n, k);
-    printf("bT_h:\n");
-    print_mat(bT_h, k, n);
-#endif
+    #ifndef DONT_PRINT_MATRIX_FLAG
+    //printf("b:\n");
+    //print_mat(b, n, k);
+    //printf("bT_h:\n");
+    //print_mat(bT_h, k, n);
+    #endif
     sum_duration = 0.0;
     for (int ridx; ridx < (cpu_run_num + BENCHMARK_SKIP_TIMES); ridx++) {
         gettimeofday(&start, NULL);
@@ -257,10 +258,11 @@ int main(int argc, char *argv[]) {
     gflops = gflops / ave_duration * 1.0e-9;
     gbps = 0;
     printf(">>> [INFO] %s %dx%d %2.6lf s %2.6lf GFLOPS\n\n", "CPU-MATRIX-TRANS-FOR-B", (int)k, (int)n, ave_duration, gflops);
-#ifndef DONT_PRINT_MATRIX_FLAG
-    printf("bT_h:\n");
-    print_mat(bT_h, k, n);
-#endif
+    #ifndef DONT_PRINT_MATRIX_FLAG
+    //printf("bT_h:\n");
+    //print_mat(bT_h, k, n);
+    #endif
+#endif // MATRIX_TRANS_CPU_ENABLE
 
 
 
@@ -353,32 +355,9 @@ int main(int argc, char *argv[]) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef MATRIX_MULT_GPU_ENABLE
     PRINT_LINE("GPU MATRIX MULTIPLICATION");
-
-    //cl_int            status;
-    //cl_context        context;
-    //cl_command_queue  command_queue;
-    //cl_program        program;
     cl_kernel         mat_mult_kernel;
-    //cl_event          event = NULL;
-
-    // gpu info
-    print_gpu_info("cat /sys/class/misc/mali0/device/gpuinfo");
     // get platform, deviceIDs, create Context, create command_queue,
     // load_cl_source, createProgramWithSource, BuildProgram
 	if(-1 == opencl_create(&context, &command_queue, &program, cl_build_program_options, mat_mult_kernel_file))
@@ -389,14 +368,12 @@ int main(int argc, char *argv[]) {
 
     // mat_mult
     cl_mem a_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_a, NULL, &status);
-    //cl_mem b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_b, NULL, &status);
-    b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_b, NULL, &status);
-
+    bT_buffer       = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_b, NULL, &status);
     cl_mem c_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_c, NULL, &status);
 
-    status  = clEnqueueWriteBuffer(command_queue, a_buffer, CL_TRUE, 0, data_size_a, (void *)a,   0, NULL, NULL);
-    status |= clEnqueueWriteBuffer(command_queue, b_buffer, CL_TRUE, 0, data_size_b, (void *)b,   0, NULL, NULL);
-    status |= clEnqueueWriteBuffer(command_queue, c_buffer, CL_TRUE, 0, data_size_c, (void *)c_d, 0, NULL, NULL);
+    status  = clEnqueueWriteBuffer(command_queue, a_buffer,  CL_TRUE, 0, data_size_a, (void *)a,    0, NULL, NULL);
+    status |= clEnqueueWriteBuffer(command_queue, bT_buffer, CL_TRUE, 0, data_size_b, (void *)bT_d, 0, NULL, NULL);
+    status |= clEnqueueWriteBuffer(command_queue, c_buffer,  CL_TRUE, 0, data_size_c, (void *)c_d,  0, NULL, NULL);
     if (status != CL_SUCCESS) {
         printf(">>> [ERROR] failed to copy data from host to device: %d\n", (int)status);
         goto error;
@@ -410,7 +387,7 @@ int main(int argc, char *argv[]) {
     status |= clSetKernelArg(mat_mult_kernel, 1, sizeof(cl_int), (void *) &n);
     status |= clSetKernelArg(mat_mult_kernel, 2, sizeof(cl_int), (void *) &k);
     status |= clSetKernelArg(mat_mult_kernel, 3, sizeof(cl_mem), (void *) &a_buffer);
-    status |= clSetKernelArg(mat_mult_kernel, 4, sizeof(cl_mem), (void *) &b_buffer);
+    status |= clSetKernelArg(mat_mult_kernel, 4, sizeof(cl_mem), (void *) &bT_buffer);
     status |= clSetKernelArg(mat_mult_kernel, 5, sizeof(cl_mem), (void *) &c_buffer);
     checkErr(status, "clSetKernelArg() for mat_mult_kernel");
 
