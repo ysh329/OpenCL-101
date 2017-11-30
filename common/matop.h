@@ -24,9 +24,6 @@ void rand_mat(ELEM_TYPE *mat, int len, int range) {
 
 // row-major
 void print_mat(ELEM_TYPE *mat, int width, int height) {
-#ifdef NOT_PRINT_FLAG
-    return;
-#endif
     for (int r = 0; r < height; r++) {
         for (int c = 0; c < width; c++)
                 printf("%.2f ", (float)mat[r*width+c]);
@@ -60,13 +57,46 @@ void add_vec(ELEM_TYPE *a, ELEM_TYPE *b, ELEM_TYPE *res, int len) {
 }
 
 // row-major
-void transpose_mat(ELEM_TYPE *a, int width, int height, ELEM_TYPE *res) {
-    for (int r = 0; r < height; r++)
-		    for (int c = 0; c < width; c++) {
-            res[c*height + r] = a[r*width + c]; 
-            //printf("res[%d, %d]:= a[%d, %d] = %.2f \n", r, c, c, r, a[c*height+r]);
-            //printf("res[%d] := a[%d] = %.2f \n\n", r*width + c, c*height + r, a[c*height+r]);
+// CPU4 FLOAT CPU-MATRIX-TRANS-FOR-B 2048x2048 0.344637 s
+void transpose_mat_naive(ELEM_TYPE *a, int height, int width, ELEM_TYPE *res) {
+    for (int row = 0; row < height; row++) {
+        for (int col = 0; col < width; col++) {
+            res[col * height + row] = a[row * width + col];
         }
+    }
+}
+
+// row-major
+// wrong impl
+void transpose_mat_inplace(ELEM_TYPE *a, int height, int width, ELEM_TYPE *res) {
+    ELEM_TYPE tmp;
+    int count = 0;
+    printf("width: %d; height: %d\n", width, height);
+    if (width > height) {
+        printf("up\n");
+        for (int row = 0; row < height; row++) {
+		    for (int col = row; col < width; col++) {
+                count += 1;
+                tmp = a[row * width + col];
+                res[row * width + col]  = a[col * height + row];
+                res[col * height + row] = tmp;
+                //printf("res[%d, %d]:= a[%d, %d] = %.2f \n", r, c, c, r, a[c*height+r]);
+                //printf("res[%d] := a[%d] = %.2f \n\n", r*width + c, c*height + r, a[c*height+r]);
+            }
+        }
+    }
+    else {
+        printf("down\n");
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < row; col++) {
+                count += 1;
+                tmp = a[row * width + col];
+				res[row * width + col]  = a[col * height + row];
+				res[col * height + row] = tmp;
+            }
+        }
+    }
+    printf("count:%d\n", count);
 }
 
 // row-major

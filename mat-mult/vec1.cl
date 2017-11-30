@@ -8,7 +8,7 @@ __kernel void mat_mult_naive(const int M, const int N, const int K, __global con
     CL_ELEM_TYPE res = 0;
 
     for (int p = 0; p < K; p++) {
-        res += a[row * M + p] * b[p * N + col];
+        res += a[row * K + p] * b[p * N + col];
     }
     c[row * N + col] = res;
 }

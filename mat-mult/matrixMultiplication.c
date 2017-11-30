@@ -14,11 +14,11 @@
 
 /*===================  CHANGE TYPE HERE ===================*/
 // Type on Host (CPU)
-#define     ELEM_TYPE                       __fp16
-#define     ELEM_TYPE_STR                   "__fp16"
+#define     ELEM_TYPE                       float
+#define     ELEM_TYPE_STR                   "float"
 // Type on Device (GPU)
-#define     CL_ELEM_TYPE                    cl_half
-#define     CL_ELEM_TYPE_STR                "half4"
+#define     CL_ELEM_TYPE                    cl_float
+#define     CL_ELEM_TYPE_STR                "float"
 
 /*=================== OTHER OCL PARAMETERS ================*/
 #define     CL_OTHER_MACRO                  ""//" -cl-mad-enable"
@@ -38,10 +38,9 @@
 /*=================== EXECUTION MODE ======================*/
 #define     MATRIX_MULT_CPU_ENABLE
 #define     MATRIX_MULT_GPU_ENABLE
-//#define     DONT_PRINT_EACH_BENCHMARK
-#define     DONT_PRINT_MATRIX_FLAG
+#define     DONT_PRINT_EACH_BENCHMARK
+//#define     DONT_PRINT_MATRIX_FLAG
 #define     BENCHMARK_SKIP_TIMES            (1)
-#define     CPU_BENCHMARK_TIMES             (1)
 
 #include "../common/matop.h"
 
@@ -93,8 +92,8 @@ int main(int argc, char *argv[]) {
         gpu_run_num = atoi( argv[7] );
         global_work_size[0] = atoi( argv[9] );  // M: global_work_size[1]
         global_work_size[1] = atoi( argv[8] );  // N: global_work_size[0]
-        global_work_size[2] = atoi( argv[10] ); // K: global_work_size[2]
-    }
+        global_work_size[2] = atoi( argv[10] ); // global_work_size[2]:default: 1
+    } 
     else {
         printf(">>> [USAGE] %s M N K KERNEL_FILE_PATH KERNEL_FUNC_NAME CPU_BENCHMARK_TIMES GPU_BENCHMARK_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
         printf(">>> [ERROR] please input args\n");
@@ -220,87 +219,88 @@ int main(int argc, char *argv[]) {
     char *program_buffer;
     size_t program_size;
 
-    FILE *fp; char buffer[KERNEL_FILE_AND_FUNC_MAX_LEN];
-    fp = popen("cat /sys/class/misc/mali0/device/gpuinfo", "r");
-    char *ret_ = fgets(buffer, sizeof(buffer), fp);
-    printf(">>> [INFO] Device name: %s", buffer);
-    pclose(fp);
+		// gpu info
+		FILE *fp; char buffer[KERNEL_FILE_AND_FUNC_MAX_LEN];
+		fp = popen("cat /sys/class/misc/mali0/device/gpuinfo", "r");
+		char *ret_ = fgets(buffer, sizeof(buffer), fp);
+		printf(">>> [INFO] Device name: %s", buffer);
+		pclose(fp);
 
-    // Load source
-    printf(">>> [INFO] program_file: %s, kernel_func: %s\n", program_file, kernel_func);
-    program_handle = fopen(program_file, "r");
-    if (program_handle == NULL) {
-        fprintf(stderr, ">>> [ERROR] failed to load kernel\n");
-        exit(-1);
-    }
+		// Load source
+		printf(">>> [INFO] program_file: %s, kernel_func: %s\n", program_file, kernel_func);
+		program_handle = fopen(program_file, "r");
+		if (program_handle == NULL) {
+			fprintf(stderr, ">>> [ERROR] failed to load kernel\n");
+			exit(-1);
+		}
 
-    fseek(program_handle, 0, SEEK_END);
-    program_size = ftell(program_handle);
-    rewind(program_handle);
-    program_buffer = (char *) malloc (program_size + 1);
-    program_buffer[program_size] = '\0';
-    size_t num_read = fread(program_buffer, sizeof(char), program_size, program_handle);
-    if (num_read == 0)
-        printf(">>> [ERROR] failed to read program file\n");
-    fclose(program_handle);
+		fseek(program_handle, 0, SEEK_END);
+		program_size = ftell(program_handle);
+		rewind(program_handle);
+		program_buffer = (char *) malloc (program_size + 1);
+		program_buffer[program_size] = '\0';
+		size_t num_read = fread(program_buffer, sizeof(char), program_size, program_handle);
+		if (num_read == 0)
+			printf(">>> [ERROR] failed to read program file\n");
+		fclose(program_handle);
 
-    // Platform
-    ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
-    if (ret != CL_SUCCESS) {
-        printf(">>> [ERROR] failed to get platform ID: %d", (int)ret);
-        goto error;
-    }
+		// Platform
+		ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+		if (ret != CL_SUCCESS) {
+			printf(">>> [ERROR] failed to get platform ID: %d", (int)ret);
+			goto error;
+		}
 
-    // Device
-    if (strcmp(OCL_DEVICE_TYPE, "CL_GPU") == 0) {
-        ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
-    }
-    else if (strcmp(OCL_DEVICE_TYPE, "CL_CPU") == 0) {
-        ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_CPU, 1, &device_id, NULL);
-    }
-    else {
-        printf(">>> [ERROR] OCL_DEVICE_TYPE declare is wrong\n");
-        goto error;
-    }
-    if (ret != CL_SUCCESS) {
-        printf(">>> [ERROR] failed to get device ID: %d\n", (int)ret);
-        goto error;
-    }
+		// Device
+		if (strcmp(OCL_DEVICE_TYPE, "CL_GPU") == 0) {
+			ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
+		}
+		else if (strcmp(OCL_DEVICE_TYPE, "CL_CPU") == 0) {
+			ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_CPU, 1, &device_id, NULL);
+		}
+		else {
+			printf(">>> [ERROR] OCL_DEVICE_TYPE declare is wrong\n");
+			goto error;
+		}
+		if (ret != CL_SUCCESS) {
+			printf(">>> [ERROR] failed to get device ID: %d\n", (int)ret);
+			goto error;
+		}
 
-    // Context
-    context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
-    if (ret != CL_SUCCESS) {
-        printf(">>> [ERROR] failed to create OpenCL context: %d\n", (int)ret);
-        goto error;
-    }
+		// Context
+		context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+		if (ret != CL_SUCCESS) {
+			printf(">>> [ERROR] failed to create OpenCL context: %d\n", (int)ret);
+			goto error;
+		}
 
-    // Command queue
-    command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
-    if (ret != CL_SUCCESS) {
-        printf(">>> [ERROR] failed to create command queue: %d", (int)ret);
-        goto error;
-    }
+		// Command queue
+		command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+		if (ret != CL_SUCCESS) {
+			printf(">>> [ERROR] failed to create command queue: %d", (int)ret);
+			goto error;
+		}
 
-    // Memory buffer
-    a_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, data_size_a, NULL, &ret);
-    b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, data_size_b, NULL, &ret);
-    c_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_c, NULL, &ret);
+		// Memory buffer
+		a_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, data_size_a, NULL, &ret);
+		b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, data_size_b, NULL, &ret);
+		c_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_c, NULL, &ret);
 
 #ifndef DONT_PRINT_MATRIX_FLAG
-    printf("==========================\n");
-    print_mat(c_d, n, m);
+		printf("==========================\n");
+		print_mat(c_d, n, m);
 #endif
 
-    ret = clEnqueueWriteBuffer(command_queue, a_buffer, CL_TRUE, 0, data_size_a, (void *)a, 0, NULL, NULL);
-    ret |= clEnqueueWriteBuffer(command_queue, b_buffer, CL_TRUE, 0, data_size_b, (void *)b, 0, NULL, NULL);
-    ret |= clEnqueueWriteBuffer(command_queue, c_buffer, CL_TRUE, 0, data_size_c, (void *)c_d, 0, NULL, NULL);
-    if (ret != CL_SUCCESS) {
-        printf(">>> [ERROR] failed to copy data from host to device: %d\n", (int)ret);
-        goto error;
-    }
+		ret = clEnqueueWriteBuffer(command_queue, a_buffer, CL_TRUE, 0, data_size_a, (void *)a, 0, NULL, NULL);
+		ret |= clEnqueueWriteBuffer(command_queue, b_buffer, CL_TRUE, 0, data_size_b, (void *)b, 0, NULL, NULL);
+		ret |= clEnqueueWriteBuffer(command_queue, c_buffer, CL_TRUE, 0, data_size_c, (void *)c_d, 0, NULL, NULL);
+		if (ret != CL_SUCCESS) {
+			printf(">>> [ERROR] failed to copy data from host to device: %d\n", (int)ret);
+			goto error;
+		}
 
-    // Create kernel
-    program = clCreateProgramWithSource(context, 1, (const char **)&program_buffer, 
+		// Create kernel
+		program = clCreateProgramWithSource(context, 1, (const char **)&program_buffer, 
              (const size_t *)&program_size, &ret); 
     if (ret != CL_SUCCESS) {
         printf(">>> [ERROR] failed to create OpenCL program from source: %d\n", (int)ret);
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
         goto error;
     }
 
-    ret = clSetKernelArg(kernel, 0, sizeof(cl_int), (void *) &m);
+    ret  = clSetKernelArg(kernel, 0, sizeof(cl_int), (void *) &m);
     ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), (void *) &n);
     ret |= clSetKernelArg(kernel, 2, sizeof(cl_int), (void *) &k);
     ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *) &a_buffer);

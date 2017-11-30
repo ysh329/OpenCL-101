@@ -17,9 +17,9 @@
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #include <CL/cl.h>
 #endif
-#pragma warning( disable : 4996 )
 
 #define     OCL_OTHER_MACRO                  ""//" -cl-mad-enable"
 #define     OCL_DEVICE_TYPE                  "CL_GPU" // "CL_CPU" or "CL_GPU"
@@ -37,7 +37,9 @@
 
 
 /*================= EXECUTION MODE ====================*/
+#define     DEBUG
 #define     MATRIX_MULT_CPU_ENABLE
+#define     MATRIX_TRANS_GPU_ENABLE
 #define     MATRIX_MULT_GPU_ENABLE
 
 #define     BENCHMARK
@@ -58,10 +60,12 @@ int main(int argc, char *argv[]) {
     double ave_duration, sum_duration, duration, gflops, gbps;
 #endif // BENCHMARK
 
-    ELEM_TYPE *a   = NULL,
-              *b   = NULL,
-              *c_h = NULL,
-              *c_d = NULL;
+    ELEM_TYPE *a    = NULL,
+              *b    = NULL,
+              *bT_h = NULL,
+              *bT_d = NULL,
+              *c_h  = NULL,
+              *c_d  = NULL;
          
     size_t m = 0,
            n = 0,
@@ -74,39 +78,55 @@ int main(int argc, char *argv[]) {
            data_size_c = 0,
            cpu_run_num = 0,
            gpu_run_num = 0,
+           mat_trans_global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1},
            global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1};
 
-    char program_file[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
-         kernel_func[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
+    char mat_trans_kernel_file[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
+         mat_trans_kernel_func[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
+         mat_mult_kernel_file[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
+         mat_mult_kernel_func[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
          cl_build_program_options[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D";
     
-    if (argc == 11) {
+    if (argc == 16) {
     /*********************************
      0. argc[0] file name
      1. argc[1] m
      2. argc[2] n
      3. argc[3] k
-     4. argc[4] program_file
-     5. argc[5] kernel_func
-     6. argc[6] cpu_run_num
-     7. argc[7] gpu_rum_num
-     8. argc[8] global_work_size[0]
-     9. argc[9] global_work_size[1]
-    10. argc[10] global_work_size[2]
+     4. argc[4] mat_trans_kernel_file
+     5. argc[5] mat_trans_kernel_func
+     6. argc[6] mat_mult_kernel_file
+     7. argc[7] mat_mult_kernel_func
+     8. argc[8] cpu_run_num
+     9. argc[9] gpu_rum_num
+    10. argc[10] global_work_size[0]
+    11. argc[11] global_work_size[1]
+    12. argc[12] global_work_size[2]
     *********************************/
         m = atoi( argv[1] );
         n = atoi( argv[2] );
         k = atoi( argv[3] );
-        strcpy(program_file, argv[4]);
-        strcpy(kernel_func, argv[5]);
-        cpu_run_num = atoi( argv[6] );
-        gpu_run_num = atoi( argv[7] );
-        global_work_size[0] = atoi( argv[9] );  // M: global_work_size[1]
-        global_work_size[1] = atoi( argv[8] );  // N: global_work_size[0]
-        global_work_size[2] = atoi( argv[10] ); // K: global_work_size[2]
+        // matrix transpose for B
+        strcpy(mat_trans_kernel_file, argv[4]);
+        strcpy(mat_trans_kernel_func, argv[5]);
+        mat_trans_global_work_size[0] = atoi( argv[7] ); // global_work_size[1]
+        mat_trans_global_work_size[1] = atoi( argv[6] ); // global_work_size[0]
+        mat_trans_global_work_size[2] = atoi( argv[8] ); // default: 1
+        // matrix multiplication for A and B
+        strcpy(mat_mult_kernel_file, argv[9]);
+        strcpy(mat_mult_kernel_func, argv[10]);
+        global_work_size[0] = atoi( argv[12] );  // M: global_work_size[1]
+        global_work_size[1] = atoi( argv[11] );  // N: global_work_size[0]
+        global_work_size[2] = atoi( argv[13] ); // default global_work_size[2]: 1
+
+        cpu_run_num = atoi( argv[14] );
+        gpu_run_num = atoi( argv[15] );
     }
     else {
-        printf(">>> [USAGE] %s M N K KERNEL_FILE_PATH KERNEL_FUNC_NAME CPU_BENCHMARK_TIMES GPU_BENCHMARK_TIMES GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]\n", argv[0]);
+        printf(">>> [USAGE] %s M N K \\\n", argv[0]);
+        printf("            TRANS_KERNEL_PATH TRANS_KERNEL_FUNC_NAME GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \\\n");
+        printf("            MAT_MULT_KERNEL_PATH MAT_MULT_KERNEL_FUNC_NAME GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \\\n");
+        printf("            CPU_BENCHMARK_TIMES GPU_BENCHMARK_TIMES\n");
         printf(">>> [ERROR] please input args\n");
         exit(-1);
     }
@@ -149,15 +169,19 @@ int main(int argc, char *argv[]) {
     data_size_b = len_b * sizeof(ELEM_TYPE);
     data_size_c = len_c * sizeof(ELEM_TYPE);
 
-    a   = (ELEM_TYPE *) malloc(data_size_a),
-    b   = (ELEM_TYPE *) malloc(data_size_b),
-    c_h = (ELEM_TYPE *) malloc(data_size_c),
-    c_d = (ELEM_TYPE *) malloc(data_size_c);
+    a    = (ELEM_TYPE *) malloc(data_size_a),
+    b    = (ELEM_TYPE *) malloc(data_size_b),
+    bT_h = (ELEM_TYPE *) malloc(data_size_b);
+    bT_d = (ELEM_TYPE *) malloc(data_size_b);
+    c_h  = (ELEM_TYPE *) malloc(data_size_c),
+    c_d  = (ELEM_TYPE *) malloc(data_size_c);
 
-    rand_mat(a,   len_a, ELEM_RAND_RANGE);
-    rand_mat(b,   len_b, ELEM_RAND_RANGE);
-    init_mat(c_d, len_c, ELEM_INIT_VALUE);
-    init_mat(c_h, len_c, ELEM_INIT_VALUE);
+    rand_mat(a,    len_a, ELEM_RAND_RANGE);
+    rand_mat(b,    len_b, ELEM_RAND_RANGE);
+    init_mat(bT_h, len_b, ELEM_INIT_VALUE);
+    init_mat(bT_d, len_b, ELEM_INIT_VALUE);
+    init_mat(c_d,  len_c, ELEM_INIT_VALUE);
+    init_mat(c_h,  len_c, ELEM_INIT_VALUE);
 
 #ifndef DONT_PRINT_MATRIX_FLAG
     printf("a:\n");      print_mat(a,   k, m);
@@ -196,25 +220,168 @@ int main(int argc, char *argv[]) {
 #endif // MATRIX_MULT_CPU_ENABLE
 
 #ifndef DONT_PRINT_MATRIX_FLAG
-    PRINT_LINE("CPU RESULT");
-    printf("c_h:\n");
+    printf("c_h:\n");    
     print_mat(c_h, n, m);
 #endif // DONT_PRINT_MATRIX_FLAG
 
-#ifdef MATRIX_MULT_GPU_ENABLE
-//   char BufferError[OCL_ERROR_LEN];
+
+
+// Transpose Matrix B
+    PRINT_LINE("Transpose Matrix B");
+#ifndef DONT_PRINT_MATRIX_FLAG
+    printf("b:\n");
+    print_mat(b, n, k);
+    printf("bT_h:\n");
+    print_mat(bT_h, k, n);
+#endif
+    sum_duration = 0.0;
+    for (int ridx; ridx < (cpu_run_num + BENCHMARK_SKIP_TIMES); ridx++) {
+        gettimeofday(&start, NULL);
+        // todo: inplace cpu mat-trans
+        //transpose_mat_inplace(b, k, n, bT_h);
+        transpose_mat_naive(b, k, n, bT_h);
+        gettimeofday(&end, NULL);
+        duration = ((double)(end.tv_sec-start.tv_sec) + 
+                    (double)(end.tv_usec-start.tv_usec)/1000000);
+        #ifndef DONT_PRINT_EACH_BENCHMARK
+        printf("%d \t %.6f\n", ridx, duration);
+        #endif
+        if (ridx < BENCHMARK_SKIP_TIMES) {
+            printf(">>> [INFO] skip first %d time(s)\n", BENCHMARK_SKIP_TIMES);
+            continue;
+        }
+        sum_duration += duration;
+    }
+    ave_duration = sum_duration / (double)cpu_run_num;
+    gflops = 1.0 * k * m;
+    gflops = gflops / ave_duration * 1.0e-9;
+    gbps = 0;
+    printf(">>> [INFO] %s %dx%d %2.6lf s %2.6lf GFLOPS\n\n", "CPU-MATRIX-TRANS-FOR-B", (int)k, (int)n, ave_duration, gflops);
+#ifndef DONT_PRINT_MATRIX_FLAG
+    printf("bT_h:\n");
+    print_mat(bT_h, k, n);
+#endif
+
+
+
+#ifdef MATRIX_TRANS_GPU_ENABLE
+    PRINT_LINE("GPU MATRIX TRANSPOSE");
     cl_int            status;
     cl_context        context;
     cl_command_queue  command_queue;
     cl_program        program;
-    cl_kernel         mat_mult_kernel;
+    cl_kernel         mat_trans_kernel;
     cl_event          event = NULL;
+
+    print_gpu_info("cat /sys/class/misc/mali0/device/gpuinfo");
+
+	if(-1 == opencl_create(&context, &command_queue, &program, cl_build_program_options, mat_trans_kernel_file))
+	{
+		printf(">>> [ERROR] OpenCL create fail\n");
+        exit(-1);
+	}
+
+    // mat_mult
+    cl_mem b_buffer  = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_b, NULL, &status);
+    cl_mem bT_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_b, NULL, &status);
+
+    status  = clEnqueueWriteBuffer(command_queue, b_buffer,  CL_TRUE, 0, data_size_b, (void *)b,    0, NULL, NULL);
+    status |= clEnqueueWriteBuffer(command_queue, bT_buffer, CL_TRUE, 0, data_size_b, (void *)bT_d, 0, NULL, NULL);
+    if (status != CL_SUCCESS) {
+        printf(">>> [ERROR] failed to copy data from host to device: %d\n", (int)status);
+        goto error;
+    }
+
+    // create kernel and set kernel args
+    mat_trans_kernel = clCreateKernel(program, mat_trans_kernel_func, &status);
+    checkErr(status, "clCreateKernel() for mat_trans_kernel");
+
+	status  = clSetKernelArg(mat_trans_kernel, 0, sizeof(cl_int), (void *) &k);
+    status |= clSetKernelArg(mat_trans_kernel, 1, sizeof(cl_int), (void *) &n);
+    status |= clSetKernelArg(mat_trans_kernel, 2, sizeof(cl_mem), (void *) &b_buffer);
+    status |= clSetKernelArg(mat_trans_kernel, 3, sizeof(cl_mem), (void *) &bT_buffer);
+    checkErr(status, "clSetKernelArg() for mat_trans_kernel");
+
+    // estimate global_size and task_size
+    printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", OCL_GLOBAL_WORK_SIZE_DIM, (int)mat_trans_global_work_size[0], (int)mat_trans_global_work_size[1], (int)mat_trans_global_work_size[2]);
+    int mat_trans_global_size = (int)mat_trans_global_work_size[0] * (int)mat_trans_global_work_size[1] * (int)mat_trans_global_work_size[2];
+    int mat_trans_task_size = m * n;
+    if (mat_trans_global_size < mat_trans_task_size) {
+        printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", mat_trans_global_size, mat_trans_task_size);
+    }
+
+    // GPU
+    printf(">>> [INFO] %s %d times %s.%s starting ...\n", OCL_DEVICE_TYPE, (int)gpu_run_num, mat_trans_kernel_file, mat_trans_kernel_func);
+    sum_duration = 0.0;
+    for (int ridx = 0; ridx < (gpu_run_num+1); ridx++) {
+        gettimeofday(&start, NULL);
+        // run kernel
+        clEnqueueNDRangeKernel(command_queue, mat_trans_kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL,
+                               mat_trans_global_work_size,
+                               OCL_LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);
+        clFinish(command_queue);
+         gettimeofday(&end, NULL);
+        duration = ((double)(end.tv_sec-start.tv_sec) +
+                    (double)(end.tv_usec-start.tv_usec)/1000000);
+        #ifndef DONT_PRINT_EACH_BENCHMARK
+            printf("%d \t %.6f\n", ridx, duration);
+        #endif // DONT_PRINT_EACH_BENCHMARK
+        if (ridx < BENCHMARK_SKIP_TIMES) {
+            printf(">>> [INFO] skip first %d time(s)\n", BENCHMARK_SKIP_TIMES);
+            continue;
+        }
+        sum_duration += duration;
+    }
+    ave_duration = sum_duration / (double)gpu_run_num;
+    gflops = 1.0 * n * k;
+    gflops = gflops / ave_duration * 1.0e-9;
+    gbps = 0;
+    printf(">>> [INFO] %s %dx%d %2.6lf s %2.6lf GFLOPS\n\n", OCL_DEVICE_TYPE, (int)k, (int)n, ave_duration, gflops);
+
+    // Copy result from device to host
+    status = clEnqueueReadBuffer(command_queue, bT_buffer, CL_TRUE, 0, data_size_b, (void *)bT_d, 0, NULL, NULL);
+    checkErr(status, "clEnqueueReadBuffer() for mat_trans_kernel");
+
+    equal_vec(bT_h, bT_d, len_b);
+
+    #ifndef DONT_PRINT_MATRIX_FLAG
+    printf("bT_d:\n");
+    print_mat(bT_d, k, n);
+    #endif // DONT_PRINT_MATRIX_FLAG
+
+#endif // MATRIX_TRANS_GPU_ENABLE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef MATRIX_MULT_GPU_ENABLE
+    PRINT_LINE("GPU MATRIX MULTIPLICATION");
+
+    //cl_int            status;
+    //cl_context        context;
+    //cl_command_queue  command_queue;
+    //cl_program        program;
+    cl_kernel         mat_mult_kernel;
+    //cl_event          event = NULL;
 
     // gpu info
     print_gpu_info("cat /sys/class/misc/mali0/device/gpuinfo");
     // get platform, deviceIDs, create Context, create command_queue,
     // load_cl_source, createProgramWithSource, BuildProgram
-	if(-1 == opencl_create(&context, &command_queue, &program, program_file))
+	if(-1 == opencl_create(&context, &command_queue, &program, cl_build_program_options, mat_mult_kernel_file))
 	{
 		printf(">>> [ERROR] OpenCL create fail\n");
         exit(-1);
@@ -222,7 +389,9 @@ int main(int argc, char *argv[]) {
 
     // mat_mult
     cl_mem a_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_a, NULL, &status);
-    cl_mem b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_b, NULL, &status);
+    //cl_mem b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_b, NULL, &status);
+    b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_b, NULL, &status);
+
     cl_mem c_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_c, NULL, &status);
 
     status  = clEnqueueWriteBuffer(command_queue, a_buffer, CL_TRUE, 0, data_size_a, (void *)a,   0, NULL, NULL);
@@ -234,7 +403,7 @@ int main(int argc, char *argv[]) {
     }
 
     // create kernel and set kernel args
-    mat_mult_kernel = clCreateKernel(program, kernel_func, &status);
+    mat_mult_kernel = clCreateKernel(program, mat_mult_kernel_func, &status);
     checkErr(status, "clCreateKernel() for mat_mult_kernel");
 
 	status  = clSetKernelArg(mat_mult_kernel, 0, sizeof(cl_int), (void *) &m);
@@ -254,7 +423,7 @@ int main(int argc, char *argv[]) {
     }
 
     // GPU
-    printf(">>> [INFO] %s %d times %s.%s starting ...\n", OCL_DEVICE_TYPE, (int)gpu_run_num, program_file, kernel_func);
+    printf(">>> [INFO] %s %d times %s.%s starting ...\n", OCL_DEVICE_TYPE, (int)gpu_run_num, mat_mult_kernel_file, mat_mult_kernel_func);
     sum_duration = 0.0;
     for (int ridx = 0; ridx < (gpu_run_num+1); ridx++) {
         gettimeofday(&start, NULL);
@@ -297,6 +466,7 @@ error:
     status = clReleaseCommandQueue(command_queue);
     status = clReleaseProgram(program);
     status = clReleaseContext(context);
+    status = clReleaseKernel(mat_trans_kernel);
     status = clReleaseKernel(mat_mult_kernel);
     status = clReleaseMemObject(a_buffer);
     status = clReleaseMemObject(b_buffer);

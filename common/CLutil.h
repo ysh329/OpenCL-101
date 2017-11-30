@@ -119,17 +119,17 @@ char* load_cl_source(const char* fileName)
 	return src;
 }
 
-int opencl_create(cl_context* context, cl_command_queue* queue, cl_program* program, const char* inputfile)
+int opencl_create(cl_context* context, cl_command_queue* queue, cl_program* program, const char* cl_build_program_options, const char* inputfile)
 {    
     char              BufferError[OCL_ERROR_LEN];
 	cl_int            status;
-    cl_platform_id   *platforms = NULL;
+    cl_platform_id   *platforms;
 	cl_platform_id    platform = NULL;
-	cl_device_id     *device;
 	cl_uint           numPlatforms;
+	cl_device_id     *device;
     cl_uint           numdevices;
 
-	status = clGetPlatformIDs(0, NULL, &numPlatforms);
+	status = clGetPlatformIDs(1, platforms, &numPlatforms);
 	checkErr(status, "clGetPlatformIDs()");
 
 	if(numPlatforms > 0)
@@ -141,7 +141,7 @@ int opencl_create(cl_context* context, cl_command_queue* queue, cl_program* prog
 			printf(">>> [ERROR] Getting platform Ids.(clGetPlatformsIDs)\n");
 			return -1;
 		}
-		for(unsigned int i=0; i < numPlatforms; ++i)
+		for(unsigned int i = 0; i < numPlatforms; ++i)
 		{
 			char pbuff[100];
 			status = clGetPlatformInfo(
@@ -161,15 +161,22 @@ int opencl_create(cl_context* context, cl_command_queue* queue, cl_program* prog
 	}
 
 	status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 0, NULL, &numdevices);
+#ifdef DEBUG
+    printf(">>> [DEBUG] numdevices: %d\n", (int)numdevices);
+#endif
 	checkErr(status, "clGetDeviceIDs()");
 
 	device = (cl_device_id *)malloc(numdevices * sizeof(cl_device_id));
 	status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, numdevices, device, NULL);
 
+#ifdef DEBUG
+    printf(">>> [DEBUG] &context: %p\n", context);
+#endif
 	*context = clCreateContext(NULL, numdevices, device, NULL, NULL, &status);
 	checkErr(status, "clCreateContext()");
+ 
+	*queue = clCreateCommandQueue(*context, *device, CL_QUEUE_PROFILING_ENABLE, &status);
 
-	*queue = clCreateCommandQueue(*context, device[1], CL_QUEUE_PROFILING_ENABLE, &status);
     //clCreateCommandQueueWithProperties
 	checkErr(status, "clCreateCommandQueue()");
 
@@ -178,16 +185,15 @@ int opencl_create(cl_context* context, cl_command_queue* queue, cl_program* prog
 	*program = clCreateProgramWithSource(*context, 1, (const char**)&program_source, NULL, &status);
 	checkErr(status, "clCreateProgramWithSource");
 
-	status = clBuildProgram(*program, 1, &device[1], NULL, NULL, NULL);
+	status = clBuildProgram(*program, 1, device, cl_build_program_options, NULL, NULL);
 	if(status != CL_SUCCESS)
 	{
-		printf(">>> [ERROR] build kernel fails\n");
+		printf(">>> [ERROR] failed to build program: %d\n", (int)status);
 		size_t len;
 		clGetProgramBuildInfo(*program, *device, CL_PROGRAM_BUILD_LOG, sizeof(BufferError), BufferError, &len);
 		BufferError[len] = '\0';
-		printf("%s", BufferError);
+		printf(">>> [ERROR] kernel build log: %s", BufferError);
 		checkErr(status, "clBuildProgram");
-		getchar();
 		return -1;
 	}
 
