@@ -289,40 +289,50 @@ int main(int argc, char *argv[]) {
 
     status  = clEnqueueWriteBuffer(command_queue, b_buffer,  CL_TRUE, 0, data_size_b, (void *)b,    0, NULL, NULL);
     status |= clEnqueueWriteBuffer(command_queue, bT_buffer, CL_TRUE, 0, data_size_b, (void *)bT_d, 0, NULL, NULL);
+    #ifdef DEBUG
     if (status != CL_SUCCESS) {
         printf(">>> [ERROR] failed to copy data from host to device: %d\n", (int)status);
         goto error;
     }
-
+    #endif // DEBUG
     // create kernel and set kernel args
     mat_trans_kernel = clCreateKernel(program, mat_trans_kernel_func, &status);
+    #ifdef DEBUG
     checkErr(status, "clCreateKernel() for mat_trans_kernel");
+    #endif // DEBUG
 
     status  = clSetKernelArg(mat_trans_kernel, 0, sizeof(cl_int), (void *) &k);
     status |= clSetKernelArg(mat_trans_kernel, 1, sizeof(cl_int), (void *) &n);
     status |= clSetKernelArg(mat_trans_kernel, 2, sizeof(cl_mem), (void *) &b_buffer);
     status |= clSetKernelArg(mat_trans_kernel, 3, sizeof(cl_mem), (void *) &bT_buffer);
+    #ifdef DEBUG
     checkErr(status, "clSetKernelArg() for mat_trans_kernel");
+    #endif // DEBUG
 
     // estimate global_size and task_size
+    #ifdef DEBUG
     printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", OCL_GLOBAL_WORK_SIZE_DIM, (int)mat_trans_global_work_size[0], (int)mat_trans_global_work_size[1], (int)mat_trans_global_work_size[2]);
     int mat_trans_global_size = (int)mat_trans_global_work_size[0] * (int)mat_trans_global_work_size[1] * (int)mat_trans_global_work_size[2];
     int mat_trans_task_size = m * n;
     if (mat_trans_global_size < mat_trans_task_size) {
         printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", mat_trans_global_size, mat_trans_task_size);
     }
+    #endif // DEBUG
 
     // GPU
+    #ifdef DEBUG
     printf(">>> [INFO] %s %d times %s.%s starting ...\n", OCL_DEVICE_TYPE, (int)gpu_run_num, mat_trans_kernel_file, mat_trans_kernel_func);
     sum_duration = 0.0;
     for (int ridx = 0; ridx < (gpu_run_num+1); ridx++) {
         gettimeofday(&start, NULL);
+    #endif // DEBUG
         // run kernel
         clEnqueueNDRangeKernel(command_queue, mat_trans_kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL,
                                mat_trans_global_work_size,
                                OCL_LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);
         clFinish(command_queue);
-         gettimeofday(&end, NULL);
+        #ifdef DEBUG
+        gettimeofday(&end, NULL);
         duration = ((double)(end.tv_sec-start.tv_sec) +
                     (double)(end.tv_usec-start.tv_usec)/1000000);
         #ifndef DONT_PRINT_EACH_BENCHMARK
@@ -339,12 +349,15 @@ int main(int argc, char *argv[]) {
     gflops = gflops / ave_duration * 1.0e-9;
     gbps = 0;
     printf(">>> [INFO] %s %dx%d %2.6lf s %2.6lf GFLOPS\n\n", OCL_DEVICE_TYPE, (int)k, (int)n, ave_duration, gflops);
+    #endif // DEBUG
 
     // Copy result from device to host
     status = clEnqueueReadBuffer(command_queue, bT_buffer, CL_TRUE, 0, data_size_b, (void *)bT_d, 0, NULL, NULL);
     //checkErr(status, "clEnqueueReadBuffer() for mat_trans_kernel");
 
+    #ifdef DEBUG
     equal_vec(bT_h, bT_d, len_b);
+    #endif
 
     #ifndef DONT_PRINT_MATRIX_FLAG
     printf("bT_d:\n");
@@ -356,6 +369,7 @@ int main(int argc, char *argv[]) {
 
 
 #ifdef MATRIX_MULT_GPU_ENABLE
+    
     PRINT_LINE("GPU MATRIX MULTIPLICATION");
     cl_kernel         mat_mult_kernel;
     // get platform, deviceIDs, create Context, create command_queue,

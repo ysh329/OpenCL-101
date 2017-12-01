@@ -66,7 +66,6 @@ void checkErr(cl_int err,const char *name)
 			default: break;
 		}
 		printf("\n");
-		exit(1);
 	}
 }
 
