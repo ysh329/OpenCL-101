@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
     mat_trans_kernel = clCreateKernel(program, mat_trans_kernel_func, &status);
     checkErr(status, "clCreateKernel() for mat_trans_kernel");
 
-	status  = clSetKernelArg(mat_trans_kernel, 0, sizeof(cl_int), (void *) &k);
+    status  = clSetKernelArg(mat_trans_kernel, 0, sizeof(cl_int), (void *) &k);
     status |= clSetKernelArg(mat_trans_kernel, 1, sizeof(cl_int), (void *) &n);
     status |= clSetKernelArg(mat_trans_kernel, 2, sizeof(cl_mem), (void *) &b_buffer);
     status |= clSetKernelArg(mat_trans_kernel, 3, sizeof(cl_mem), (void *) &bT_buffer);
