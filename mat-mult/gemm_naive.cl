@@ -13,6 +13,47 @@ __kernel void mat_mult_naive(const int M, const int N, const int K, __global con
     c[row * N + col] = res;
 }
 
+
+/* Block sizes */
+#define mc 256
+#define kc 128
+#define nb 1000
+
+__kernel void pp(__global const CL_INPUT_TYPE *bb,
+                 __global CL_INPUT_TYPE *cc) {
+    cc[0] = cc[0] * 1;
+}
+
+__kernel void mat_mult_naive_block(const int M,
+                                   const int N, 
+                                   const int K, 
+                                   __global const CL_INPUT_TYPE *a,
+                                   __global const CL_INPUT_TYPE *b,
+                                   __global CL_INPUT_TYPE *c) {
+   const int col = get_global_id(0);
+   const int row = get_global_id(1) * mc;
+   /////////////////////////////////////////////////////////
+   ////////////////// BLOCK ////////////////////////////////
+   /////////////////////////////////////////////////////////
+
+
+    int i, p, pb, ib;
+    pb = min( K-p, kc ); 
+
+
+
+
+
+
+    for (int p = 0; p < K; p++) {
+        res += a[row * K + p] * b[p * N + col];
+        pp( (a), (c) );
+    }
+    c[row * N + col] = res;
+
+}
+
+
 __kernel void mat_mult_naive_trans(const int M, const int N, const int K, __global const CL_INPUT_TYPE *a, __global const CL_INPUT_TYPE *b, __global CL_INPUT_TYPE *bT, __global CL_INPUT_TYPE *c) {
     const int col = get_global_id(0);
     const int row = get_global_id(1);

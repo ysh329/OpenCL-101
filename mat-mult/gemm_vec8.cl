@@ -29,6 +29,32 @@ __kernel void mat_mult_vec8(const int M, const int N, const int K, __global cons
     c[row * N + col] = res.s0 + res.s1 + res.s2 + res.s3 + res.s4 + res.s5 + res.s6 + res.s7;
 }
 
+// 1024x1024x1024 [1024,128,1] [8,8,1] slightly better than [4,4,1] [16,16,1]
+// float8 0.204360 s 10.513481 GFLOPS 
+// half8  0.100909 s 21.291696 GFLOPS 
+// 2048x2048x2048 [2048,256,1] [8,8,1] slightly better than [4,4,1] [16,16,1]
+// float8 1.754034 s  9.796879 GFLOPS
+// half8  0.848641 s 20.248929 GFLOPS 
+__kernel void mat_mult_ma_vec1x8(const int M,
+                                 const int N,
+                                 const int K,
+                                 __global const CL_INPUT_TYPE *a, 
+                                 __global const CL_INPUT_TYPE *b, 
+                                 __global       CL_INPUT_TYPE *c) {
+
+    int const row = get_group_id(0) * WORK_GROUP_COL + get_local_id(0);  // 1024
+    int const col = get_group_id(1) * WORK_GROUP_ROW + get_local_id(1);  // 256
+
+    CL_ELEM_TYPE res = 0;  
+    for (int p = 0; p < K; p++)
+    {
+        CL_ELEM_TYPE a_vec = (CL_ELEM_TYPE)a[row * K + p];
+        CL_ELEM_TYPE b_vec = vload8(col, (__global CL_INPUT_TYPE *)(b + p * N));
+        res += a_vec * b_vec;
+    }
+    vstore8(res, col, (__global CL_INPUT_TYPE *)(c + row * N));
+}
+
 
 // float8 1024x1024x1024 0.860143 s 2.496659 GFLOPS
 // half8 1024x1024x1024 0.162382 s 13.224895 GFLOPS

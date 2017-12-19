@@ -119,12 +119,12 @@ int equal_mat(ELEM_TYPE *a, ELEM_TYPE *b, int width, int height) {
 int equal_vec(ELEM_TYPE *a, ELEM_TYPE *b, int len) {
     int correct_num = 0;
     for (int idx = 0; idx < len; idx++) 
-        if (a[idx] - b[idx] < 1.0)
+        if (a[idx] - b[idx] < (ELEM_TYPE)1.0)
             correct_num += 1;
 
     float correct_rate = (float) correct_num / (float) len;
     printf(">>> [TEST] correct rate: %.4f\n", correct_rate);
-    if (1.0 - correct_rate < 10e-8)
+    if (1.0 - correct_rate < 10e-6)
         printf(">>> [TEST] ~ Bingo ~ matrix a == matrix b\n\n");
     else
         printf(">>> [TEST] matrix a is NOT equal to matrix b\n\n");
@@ -132,22 +132,44 @@ int equal_vec(ELEM_TYPE *a, ELEM_TYPE *b, int len) {
 }
 
 void dotprod_mat(ELEM_TYPE *a, ELEM_TYPE *b, ELEM_TYPE *res, int len) {
-    for (int idx; idx < len; idx++)
+    for (int idx = 0; idx < len; idx++)
         res[idx] = a[idx] * b[idx];
 }
 
+void dotprod_mat_alpha(ELEM_TYPE *a, ELEM_TYPE *res, int len, ELEM_TYPE alpha) {
+    for (int idx = 0; idx < len; idx++)
+        res[idx] = a[idx] * alpha;
+}
+
 // row-major
+void mult_mat_alpha(ELEM_TYPE *a, ELEM_TYPE *b, ELEM_TYPE *res, int M, int N, int K, ELEM_TYPE alpha) {
+    int i, j, p;
+    init_mat(res, N*M, 0); 
+
+    for (i = 0; i < M; i++) {
+        for (p = 0; p < K; p++) {
+            for (j = 0; j < N; j++) {
+                res[i * N + j] += a[i * K + p] * b[p * N + j] * alpha;
+                // check
+                //printf("res[%d * %d + %d] %.2f += a[%d, %d] %.2f * b[%d, %d] %.2f \n", i, N, j, res[i*N+j], i, p, a[i*K+p], p, j, b[p*N+j]);
+            }
+        }
+    }
+}
+
 void mult_mat(ELEM_TYPE *a, ELEM_TYPE *b, ELEM_TYPE *res, int M, int N, int K) {
     int i, j, p;
     init_mat(res, N*M, 0); 
 
-    for (i = 0; i < M; i++)
-        for (p = 0; p < K; p++)
+    for (i = 0; i < M; i++) {
+        for (p = 0; p < K; p++) {
             for (j = 0; j < N; j++) {
                 res[i * N + j] += a[i * K + p] * b[p * N + j];
                 // check
                 //printf("res[%d * %d + %d] %.2f += a[%d, %d] %.2f * b[%d, %d] %.2f \n", i, N, j, res[i*N+j], i, p, a[i*K+p], p, j, b[p*N+j]);
             }
+        }
+    }
 }
 
 
