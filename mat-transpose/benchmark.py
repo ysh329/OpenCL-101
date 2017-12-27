@@ -1,35 +1,19 @@
 #!/bin/python2
 
 def init():
-	global matrix_transpose_bin, ndim_list, size_list, run_num, kernel_file_path_list, global_work_size_2d_list
+    global matrix_transpose_bin, ndim_list, size_list, run_num, kernel_file_path_list, global_work_size_2d_list
 
-	############################# initialize parameters #############################
-	matrix_transpose_bin = "./matrixTranspose"
-        kernel_file_path_list = ["./matrixTranspose_v3_float16.cl"]
-        #kernel_file_path_list = ["./matrixTranspose_v3_float4.cl", "./matrixTranspose_v3_float8.cl"]
-        #kernel_file_path_list = ["./matrixTranspose_v3_2.cl"]
-	#kernel_file_path_list = ["./matrixTranspose_v2_colA_8x8.cl"]
-	#kernel_file_path_list = ["./matrixTranspose_v1_colA.cl", "./matrixTranspose_v2_colA.cl"]
-	#kernel_file_path_list = ["./matrixTranspose_v1_4x1.cl"]
-	#kernel_file_path_list = ["./matrixTranspose_v1_4x1_colA.cl"]
-	run_num = 100
-	size_list = map(lambda n: 2**n, xrange(4,14))
-	#################################################################################
+    ############################# initialize parameters #############################
+    matrix_transpose_bin = "./matrixTranspose"
+    kernel_file_path_list = ["./matrixTranspose_v3_float16.cl"]
+    run_num = 10
+    #size_list = map(lambda n: 2**n, xrange(4,14))
+    size_list = [1024]
+    #################################################################################
 
-	global_work_size_2d_list = []
-        #global_work_size_list_4_kernel_3_float4 = map(lambda size: (size/4, size/4, 1), size_list)
-        #global_work_size_list_4_kernel_3_float8 = map(lambda size: (size/8, size/8, 1), size_list)
-        global_work_size_list_4_kernel_3_float16 = map(lambda size: (size/16, size/16, 1), size_list)
-        #global_work_size_2d_list.append(global_work_size_list_4_kernel_3_float4)
-        #global_work_size_2d_list.append(global_work_size_list_4_kernel_3_float8)
-        global_work_size_2d_list.append(global_work_size_list_4_kernel_3_float16)
-	#global_work_size_list_4_kernel_1 = map(lambda size: (size,    1, 1), size_list)
-	#global_work_size_list_4_kernel_2 = map(lambda size: (size/8, size/8, 1), size_list)
-	#global_work_size_2d_list.append(global_work_size_list_4_kernel_1)
-	#global_work_size_2d_list.append(global_work_size_list_4_kernel_2)
-
-	#global_work_size_list_4_kernel_1_1x4 = map(lambda size: (size/4,    1, 1), size_list)
-	#global_work_size_2d_list.append(global_work_size_list_4_kernel_1_1x4)
+    global_work_size_2d_list = []
+    global_work_size_list_4_kernel_3_float16 = map(lambda size: (size/16, size/16, 1), size_list)
+    global_work_size_2d_list.append(global_work_size_list_4_kernel_3_float16)
 
 	#################################################################################
 
@@ -38,6 +22,11 @@ def init():
 	#print(kernel_file_path_list)
 	#for i in global_work_size_2d_list: print i
 
+def get_kernels(kernels_path="./"):
+    import os
+    kernels = filter(lambda k: ".cl" in k, os.listdir(kernels_path))
+    return kernels
+    
 def create_cmd():
 
 	global cmd_list
@@ -69,5 +58,5 @@ def run_cmd():
 if __name__ == "__main__":
 	init()
 	create_cmd()
-	run_cmd()
+	#run_cmd()
 
