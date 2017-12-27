@@ -7,6 +7,26 @@
 #include <time.h>
 #include <string.h>
 
+double timer(void)
+{
+  struct timeval Tvalue;
+  struct timezone dummy;
+
+  gettimeofday(&Tvalue, &dummy);
+  double etime = (double)Tvalue.tv_sec + 1.0e-6*((double)Tvalue.tv_usec);
+
+  return etime;
+}
+
+ELEM_TYPE min(ELEM_TYPE a, ELEM_TYPE b) {
+    if (a > b) {
+        return b;
+    }
+    else {
+        return a;
+    }
+}
+
 void init_mat(ELEM_TYPE *mat, int len, ELEM_TYPE setVal) {
     for (int idx = 0; idx < len; idx++)
         mat[idx] = (ELEM_TYPE)setVal;

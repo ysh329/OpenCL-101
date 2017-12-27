@@ -311,17 +311,29 @@ int main(int argc, char *argv[]) {
 
     // estimate global_size and task_size
     #ifdef DEBUG
-    printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", OCL_GLOBAL_WORK_SIZE_DIM, (int)mat_trans_global_work_size[0], (int)mat_trans_global_work_size[1], (int)mat_trans_global_work_size[2]);
-    int mat_trans_global_size = (int)mat_trans_global_work_size[0] * (int)mat_trans_global_work_size[1] * (int)mat_trans_global_work_size[2];
+    printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n",
+           OCL_GLOBAL_WORK_SIZE_DIM, 
+           (int)mat_trans_global_work_size[0], 
+           (int)mat_trans_global_work_size[1], 
+           (int)mat_trans_global_work_size[2]);
+    int mat_trans_global_size = (int)mat_trans_global_work_size[0] * 
+                                (int)mat_trans_global_work_size[1] *
+                                (int)mat_trans_global_work_size[2];
     int mat_trans_task_size = m * n;
     if (mat_trans_global_size < mat_trans_task_size) {
-        printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", mat_trans_global_size, mat_trans_task_size);
+        printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", 
+                    mat_trans_global_size, 
+                    mat_trans_task_size);
     }
     #endif // DEBUG
 
     // GPU
     #ifdef DEBUG
-    printf(">>> [INFO] %s %d times %s.%s starting ...\n", OCL_DEVICE_TYPE, (int)gpu_run_num, mat_trans_kernel_file, mat_trans_kernel_func);
+    printf(">>> [INFO] %s %d times %s.%s starting ...\n", 
+                OCL_DEVICE_TYPE, 
+                (int)gpu_run_num, 
+                mat_trans_kernel_file, 
+                mat_trans_kernel_func);
     sum_duration = 0.0;
     for (int ridx = 0; ridx < (gpu_run_num+1); ridx++) {
         gettimeofday(&start, NULL);

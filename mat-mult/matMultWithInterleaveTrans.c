@@ -41,6 +41,7 @@
 #define     MATRIX_MULT_CPU_ENABLE
 #define     MATRIX_TRANS_CPU_ENABLE
 #define     MATRIX_TRANS_GPU_ENABLE
+#define     MATRIX_INTERLEAVE_GPU_ENABLE
 #define     MATRIX_MULT_GPU_ENABLE
 
 #define     BENCHMARK
@@ -62,6 +63,7 @@ int main(int argc, char *argv[]) {
 #endif // BENCHMARK
 
     ELEM_TYPE *a    = NULL,
+              *aI_d = NULL,
               *b    = NULL,
               *bT_h = NULL,
               *bT_d = NULL,
@@ -84,6 +86,8 @@ int main(int argc, char *argv[]) {
 
     char mat_trans_kernel_file[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
          mat_trans_kernel_func[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
+         mat_interleave_kernel_file[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
+         mat_interleave_kernel_func[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
          mat_mult_kernel_file[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
          mat_mult_kernel_func[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
          cl_build_program_options[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D ";
@@ -113,21 +117,28 @@ int main(int argc, char *argv[]) {
         mat_trans_global_work_size[0] = atoi( argv[7] ); // global_work_size[1]
         mat_trans_global_work_size[1] = atoi( argv[6] ); // global_work_size[0]
         mat_trans_global_work_size[2] = atoi( argv[8] ); // default: 1
+        // matrix interleave for A
+        strcpy(mat_interleave_kernel_file, argv[9]);
+        strcpy(mat_interleave_kernel_func, argv[10]);
+        mat_interleave_global_work_size[0] = atoi( argv[12] );
+        mat_interleave_global_work_size[1] = atoi( argv[11] );
+        mat_interleave_global_work_size[2] = atoi( argv[13] );
         // matrix multiplication for A and B
-        strcpy(mat_mult_kernel_file, argv[9]);
-        strcpy(mat_mult_kernel_func, argv[10]);
-        global_work_size[0] = atoi( argv[12] );  // M: global_work_size[1]
-        global_work_size[1] = atoi( argv[11] );  // N: global_work_size[0]
-        global_work_size[2] = atoi( argv[13] ); // default global_work_size[2]: 1
-
-        cpu_run_num = atoi( argv[14] );
-        gpu_run_num = atoi( argv[15] );
+        strcpy(mat_mult_kernel_file, argv[14]);
+        strcpy(mat_mult_kernel_func, argv[15]);
+        global_work_size[0] = atoi( argv[17] );  // M: global_work_size[1]
+        global_work_size[1] = atoi( argv[16] );  // N: global_work_size[0]
+        global_work_size[2] = atoi( argv[18] ); // default global_work_size[2]: 1
+        // execution times for gpu and cpu
+        cpu_run_num = atoi( argv[19] );
+        gpu_run_num = atoi( argv[20] );
     }
     else {
         printf(">>> [USAGE] %s M N K \\\n", argv[0]);
-        printf("            TRANS_KERNEL_PATH TRANS_KERNEL_FUNC_NAME GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \\\n");
-        printf("            MAT_MULT_KERNEL_PATH MAT_MULT_KERNEL_FUNC_NAME GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \\\n");
-        printf("            CPU_BENCHMARK_TIMES GPU_BENCHMARK_TIMES\n");
+        printf("            TRANS_KERNEL_PATH      TRANS_KERNEL_FUNC_NAME       GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \\\n");
+        printf("            INTERLEAVE_KERNEL_PATH INTERLEAVE__KERNEL_FUNC_NAME GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \\\n");
+        printf("            MULT_KERNEL_PATH       MULT_KERNEL_FUNC_NAME        GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \\\n");
+        printf("            CPU_BENCHMARK_TIMES    GPU_BENCHMARK_TIMES\n");
         printf(">>> [ERROR] please input args\n");
         exit(-1);
     }
@@ -170,15 +181,17 @@ int main(int argc, char *argv[]) {
     data_size_b = len_b * sizeof(ELEM_TYPE);
     data_size_c = len_c * sizeof(ELEM_TYPE);
 
-    a    = (ELEM_TYPE *) malloc(data_size_a),
-    b    = (ELEM_TYPE *) malloc(data_size_b),
+    a    = (ELEM_TYPE *) malloc(data_size_a);
+    aI_d = (ELEM_TYPE *) malloc(data_size_a);
+    b    = (ELEM_TYPE *) malloc(data_size_b);
     bT_h = (ELEM_TYPE *) malloc(data_size_b);
     bT_d = (ELEM_TYPE *) malloc(data_size_b);
-    c_h  = (ELEM_TYPE *) malloc(data_size_c),
+    c_h  = (ELEM_TYPE *) malloc(data_size_c);
     c_d  = (ELEM_TYPE *) malloc(data_size_c);
 
     rand_mat(a,    len_a, ELEM_RAND_RANGE);
     rand_mat(b,    len_b, ELEM_RAND_RANGE);
+    init_mat(aI_d, len_a, ELEM_INIT_VALUE);
     init_mat(bT_h, len_b, ELEM_INIT_VALUE);
     init_mat(bT_d, len_b, ELEM_INIT_VALUE);
     init_mat(c_d,  len_c, ELEM_INIT_VALUE);
@@ -311,25 +324,43 @@ int main(int argc, char *argv[]) {
 
     // estimate global_size and task_size
     #ifdef DEBUG
-    printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", OCL_GLOBAL_WORK_SIZE_DIM, (int)mat_trans_global_work_size[0], (int)mat_trans_global_work_size[1], (int)mat_trans_global_work_size[2]);
-    int mat_trans_global_size = (int)mat_trans_global_work_size[0] * (int)mat_trans_global_work_size[1] * (int)mat_trans_global_work_size[2];
+    printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", 
+                OCL_GLOBAL_WORK_SIZE_DIM, 
+                (int)mat_trans_global_work_size[0], 
+                (int)mat_trans_global_work_size[1], 
+                (int)mat_trans_global_work_size[2]);
+    int mat_trans_global_size = (int)mat_trans_global_work_size[0] * 
+                                (int)mat_trans_global_work_size[1] * 
+                                (int)mat_trans_global_work_size[2];
     int mat_trans_task_size = m * n;
     if (mat_trans_global_size < mat_trans_task_size) {
-        printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", mat_trans_global_size, mat_trans_task_size);
+        printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", 
+                    mat_trans_global_size, 
+                    mat_trans_task_size);
     }
     #endif // DEBUG
 
     // GPU
     #ifdef DEBUG
-    printf(">>> [INFO] %s %d times %s.%s starting ...\n", OCL_DEVICE_TYPE, (int)gpu_run_num, mat_trans_kernel_file, mat_trans_kernel_func);
+    printf(">>> [INFO] %s %d times %s.%s starting ...\n", 
+                OCL_DEVICE_TYPE, 
+                (int)gpu_run_num, 
+                mat_trans_kernel_file, 
+                mat_trans_kernel_func);
     sum_duration = 0.0;
     for (int ridx = 0; ridx < (gpu_run_num+1); ridx++) {
         gettimeofday(&start, NULL);
     #endif // DEBUG
         // run kernel
-        clEnqueueNDRangeKernel(command_queue, mat_trans_kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL,
+        clEnqueueNDRangeKernel(command_queue, 
+                               mat_trans_kernel, 
+                               OCL_GLOBAL_WORK_SIZE_DIM, 
+                               NULL,
                                mat_trans_global_work_size,
-                               OCL_LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);
+                               OCL_LOCAL_WORK_SIZE_POINTER, 
+                               0, 
+                               NULL, 
+                               &event);
         clFinish(command_queue);
         #ifdef DEBUG
         gettimeofday(&end, NULL);
@@ -348,11 +379,24 @@ int main(int argc, char *argv[]) {
     gflops = 1.0 * n * k;
     gflops = gflops / ave_duration * 1.0e-9;
     gbps = 0;
-    printf(">>> [INFO] %s %dx%d %2.6lf s %2.6lf GFLOPS\n\n", OCL_DEVICE_TYPE, (int)k, (int)n, ave_duration, gflops);
+    printf(">>> [INFO] %s %dx%d %2.6lf s %2.6lf GFLOPS\n\n", 
+                OCL_DEVICE_TYPE, 
+                (int)k, 
+                (int)n, 
+                ave_duration, 
+                gflops);
     #endif // DEBUG
 
     // Copy result from device to host
-    status = clEnqueueReadBuffer(command_queue, bT_buffer, CL_TRUE, 0, data_size_b, (void *)bT_d, 0, NULL, NULL);
+    status = clEnqueueReadBuffer(command_queue, 
+                                 bT_buffer, 
+                                 CL_TRUE, 
+                                 0, 
+                                 data_size_b, 
+                                 (void *)bT_d, 
+                                 0, 
+                                 NULL, 
+                                 NULL);
     //checkErr(status, "clEnqueueReadBuffer() for mat_trans_kernel");
 
     #ifdef DEBUG
@@ -368,13 +412,107 @@ int main(int argc, char *argv[]) {
 
 
 
+
+
+#ifdef MATRIX_INTERLEAVE_GPU_ENABLE
+    PRINT_LINE("GPU INTERLEAVE");
+
+    #ifndef DONT_PRINT_MATRIX_FLAG
+    printf("aI_d:\n");   
+    print_mat(aI_d, m, k);
+    #endif
+
+	if (-1 == opencl_create(&context, &command_queue, &program, cl_build_program_options, mat_mult_kernel_file))
+	{
+		printf(">>> [ERROR] OpenCL create fail\n");
+        exit(-1);
+	}
+
+    // mat_mult
+    cl_mem a_buffer  = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_a, NULL, &status);
+    cl_mem aI_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_a, NULL, &status);
+
+    status  = clEnqueueWriteBuffer(command_queue, a_buffer,  CL_TRUE, 0, data_size_a, (void *)a,    0, NULL, NULL);
+    status |= clEnqueueWriteBuffer(command_queue, aI_buffer, CL_TRUE, 0, data_size_b, (void *)aI_d, 0, NULL, NULL);
+
+    if (status != CL_SUCCESS) {
+        printf(">>> [ERROR] failed to copy data from host to device: %d\n", (int)status);
+        goto error;
+    }
+
+    // create kernel and set kernel args
+    cl_kernel mat_interleave_kernel = clCreateKernel(program, mat_interleave_kernel_func, &status);
+    checkErr(status, "clCreateKernel() for mat_interleave_kernel");
+
+	status  = clSetKernelArg(mat_interleave_kernel, 0, sizeof(cl_int), (void *) &m);
+    status |= clSetKernelArg(mat_interleave_kernel, 1, sizeof(cl_int), (void *) &k);
+    status |= clSetKernelArg(mat_interleave_kernel, 2, sizeof(cl_mem), (void *) &a_buffer);
+    status |= clSetKernelArg(mat_interleave_kernel, 3, sizeof(cl_mem), (void *) &aI_buffer);
+    checkErr(status, "clSetKernelArg() for mat_interleave_kernel");
+
+    // estimate global_size and task_size
+    printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", 
+                OCL_GLOBAL_WORK_SIZE_DIM, 
+                (int)global_work_size[0], 
+                (int)global_work_size[1], 
+                (int)global_work_size[2]);
+    int global_size = (int) global_work_size[0] * 
+                      (int) global_work_size[1] * 
+                      (int) global_work_size[2];
+    int task_size = m * n;
+    if (global_size < task_size) {
+        printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", global_size, task_size);
+    }
+
+    printf(">>> [INFO] %s %d times %s.%s starting ...\n", 
+                OCL_DEVICE_TYPE, 
+                (int)gpu_run_num, 
+                mat_interleave_kernel_file, 
+                mat_interleave_kernel_func);
+    sum_duration = 0.0;
+    for (int ridx = 0; ridx < (gpu_run_num+1); ridx++) {
+        gettimeofday(&start, NULL);
+        // run kernel
+        clEnqueueNDRangeKernel(command_queue, mat_interleave_kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL,
+                               global_work_size,
+                               OCL_LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);
+        clFinish(command_queue);
+        gettimeofday(&end, NULL);
+        duration = ((double)(end.tv_sec-start.tv_sec) +
+                    (double)(end.tv_usec-start.tv_usec)/1000000);
+        #ifndef DONT_PRINT_EACH_BENCHMARK
+            printf("%d \t %.6f\n", ridx, duration);
+        #endif // DONT_PRINT_EACH_BENCHMARK
+        if (ridx < BENCHMARK_SKIP_TIMES) {
+            printf(">>> [INFO] skip first %d time(s)\n", BENCHMARK_SKIP_TIMES);
+            continue;
+        }
+        sum_duration += duration;
+    }
+    ave_duration = sum_duration / (double)gpu_run_num;
+    gflops = 1.0 * m * k;
+    gflops = gflops / ave_duration * 1.0e-9;
+    gbps = 0;
+    printf(">>> [INFO] %s %dx%d %2.6lf s %2.6lf GFLOPS\n\n", OCL_DEVICE_TYPE, (int)m, (int)k, ave_duration, gflops);
+
+    // Copy result from device to host
+    status = clEnqueueReadBuffer(command_queue, a_buffer, CL_TRUE, 0, data_size_a, (void *)aI_d, 0, NULL, NULL);
+    checkErr(status, "clEnqueueReadBuffer() for mat_interleave_kernel");
+
+#endif // MATRIX_INTERLEAVE_GPU_ENABLE
+
+
+
+
+
+
 #ifdef MATRIX_MULT_GPU_ENABLE
     
     PRINT_LINE("GPU MATRIX MULTIPLICATION");
     cl_kernel         mat_mult_kernel;
     // get platform, deviceIDs, create Context, create command_queue,
     // load_cl_source, createProgramWithSource, BuildProgram
-	if(-1 == opencl_create(&context, &command_queue, &program, cl_build_program_options, mat_mult_kernel_file))
+	if (-1 == opencl_create(&context, &command_queue, &program, cl_build_program_options, mat_mult_kernel_file))
 	{
 		printf(">>> [ERROR] OpenCL create fail\n");
         exit(-1);

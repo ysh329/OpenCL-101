@@ -1,6 +1,6 @@
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
-#define  SUM_VEC8(vec4)  vec8.s0+vec8.s1+vec8.s2+vec8.s3+vec8.s4+vec8.s5+vec8.s6+vec8.s7
+#define  SUM_VEC8(vec8)  vec8.s0+vec8.s1+vec8.s2+vec8.s3+vec8.s4+vec8.s5+vec8.s6+vec8.s7
 
 
 // float 1024x1024 0.021925 s 0.047825 GFLOPS  

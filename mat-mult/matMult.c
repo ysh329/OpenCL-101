@@ -43,7 +43,7 @@
 #define     MATRIX_MULT_CPU_ENABLE
 #define     MATRIX_MULT_GPU_ENABLE
 #define     MATRIX_ADD_CPU_ENABLE
-#define     MATRIX_ADD_GPU_ENABLE
+//#define     MATRIX_ADD_GPU_ENABLE
 //#define     DONT_PRINT_EACH_BENCHMARK
 #define     DONT_PRINT_MATRIX_FLAG
 #define     BENCHMARK_SKIP_TIMES            (1)
@@ -353,15 +353,14 @@ int main(int argc, char *argv[]) {
         goto error;
     }
 
+/*
     ret  = clSetKernelArg(kernel, 0, sizeof(cl_int), (void *) &m);
     ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), (void *) &n);
     ret |= clSetKernelArg(kernel, 2, sizeof(cl_int), (void *) &k);
     ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *) &a_buffer);
     ret |= clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *) &b_buffer);
     ret |= clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *) &c_buffer);
-    /////////////////////////////////////////////////////////////////////
-    ELEM_TYPE alpha = 0.5;
-    //ret |= clSetKernelArg(kernel, 6, sizeof(ELEM_TYPE), (void *) &alpha);
+*/
 
     if (ret != CL_SUCCESS) {
         printf(">>> [ERROR] failed to set kernel arguments.%d\n", (int)ret);
@@ -394,17 +393,56 @@ int main(int argc, char *argv[]) {
            gpu_run_num, 
            program_file, 
            kernel_func);
+
+
+
+    /* Block sizes */
+    // TODO
+    #define mc 256
+    #define kc 128
+    #define nb 1000
+
+    for (int p = 0; p < k; p += kc) {
+        int pb = min(k-p, kc);
+        for (int i = 0; i < m; i += mc) {
+            int ib = min(m-i, mc);
+            int first_time = (i == 0);
+            // set kernel args
+            ret  = clSetKernelArg(kernel, 0, sizeof(cl_int), (void *) &ib);
+            ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), (void *) &n);
+            ret |= clSetKernelArg(kernel, 2, sizeof(cl_int), (void *) &pb);
+            ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *) (&a_buffer+i*k+p) );
+            ret |= clSetKernelArg(kernel, 4, sizeof(cl_int), (void *) &k);
+            ret |= clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *) (&b_buffer+p*n+0) );
+            ret |= clSetKernelArg(kernel, 6, sizeof(cl_int), (void *) &n);
+            ret |= clSetKernelArg(kernel, 7, sizeof(cl_mem), (void *) (&c_buffer+i*k+0) );
+            ret |= clSetKernelArg(kernel, 8, sizeof(cl_int), (void *) &n);
+            ret |= clSetKernelArg(kernel, 9, sizeof(cl_int), (void *) &first_time);
+
+            // TODO
+            global_work_size[0] = pb/4;// or pb/4
+            global_work_size[1] = ib/4;// or ib/4
+            //local_work_size
+
+            clEnqueueNDRangeKernel(command_queue, kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL, 
+                                   global_work_size,
+                                   OCL_LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);//*/
+
+            //clEnqueueNDRangeKernel(command_queue, kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL, 
+            //                       global_work_size,
+            //                       local_work_group_size, 0, NULL, &event);
+
+        }
+    }
+    clFinish(command_queue);
+
+
+
+/*
     sum_duration = 0.0;
     for (int ridx = 0; ridx < (gpu_run_num+1); ridx++) {
         gettimeofday(&start, NULL);
-        // Run kernel
-        //*
-        clEnqueueNDRangeKernel(command_queue, kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL, 
-                               global_work_size,
-                               OCL_LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);//*/
-        //clEnqueueNDRangeKernel(command_queue, kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL, 
-        //                       global_work_size,
-        //                       local_work_group_size, 0, NULL, &event);
+
         // clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, 
         //                       global_work_size,
         //                       local_work_group_size, 0, NULL, &event);
@@ -431,7 +469,7 @@ int main(int argc, char *argv[]) {
            OCL_DEVICE_TYPE, 
            m, n, k, 
            ave_duration, gflops);
-
+*/
     // Copy result from device to host
     ret = clEnqueueReadBuffer(command_queue, c_buffer, CL_TRUE, 0, data_size_c, (void *)c_d, 0, NULL, NULL);
     if (ret != CL_SUCCESS) {
