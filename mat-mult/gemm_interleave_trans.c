@@ -30,16 +30,16 @@ __kernel void mat_interleave_vec4(const int m,
 
     CL_ELEM_TYPE 
     res = (CL_ELEM_TYPE)(aa0.s0, aa1.s0, aa2.s0, aa3.s0);
-    vstore4(res, 0, aI+(row/4)*(m*4) + (col*4));
+    vstore4(res, 0, aI+(row/4)*(k*4) + (col*4));
 
     res = (CL_ELEM_TYPE)(aa0.s1, aa1.s1, aa2.s1, aa3.s1);
-    vstore4(res, 0, aI+(row/4)*(m*4) + (col*4+4));
+    vstore4(res, 0, aI+(row/4)*(k*4) + (col*4+4));
 
     res = (CL_ELEM_TYPE)(aa0.s2, aa1.s2, aa2.s2, aa3.s2);
-    vstore4(res, 0, aI+(row/4)*(m*4) + (col*4+8));
+    vstore4(res, 0, aI+(row/4)*(k*4) + (col*4+8));
 
     res = (CL_ELEM_TYPE)(aa0.s3, aa1.s3, aa2.s3, aa3.s3);
-    vstore4(res, 0, aI+(row/4)*(m*4) + (col*4+12));
+    vstore4(res, 0, aI+(row/4)*(k*4) + (col*4+12));
 
 }
 
