@@ -549,10 +549,10 @@ int main(int argc, char *argv[]) {
     mat_mult_kernel = clCreateKernel(program, mat_mult_kernel_func, &status);
     checkErr(status, "clCreateKernel() for mat_mult_kernel");
 
-	status  = clSetKernelArg(mat_mult_kernel, 0, sizeof(cl_int), (void *) &m);
-    status |= clSetKernelArg(mat_mult_kernel, 1, sizeof(cl_int), (void *) &n);
-    status |= clSetKernelArg(mat_mult_kernel, 2, sizeof(cl_int), (void *) &k);
-    status |= clSetKernelArg(mat_mult_kernel, 3, sizeof(cl_mem), (void *) &a_buffer);
+    status  = clSetKernelArg(mat_mult_kernel, 0, sizeof(cl_int), (void *) &aI_height);
+    status |= clSetKernelArg(mat_mult_kernel, 1, sizeof(cl_int), (void *) &bT_width);
+    status |= clSetKernelArg(mat_mult_kernel, 2, sizeof(cl_int), (void *) &aI_width);
+    status |= clSetKernelArg(mat_mult_kernel, 3, sizeof(cl_mem), (void *) &aI_buffer);
     status |= clSetKernelArg(mat_mult_kernel, 4, sizeof(cl_mem), (void *) &bT_buffer);
     status |= clSetKernelArg(mat_mult_kernel, 5, sizeof(cl_mem), (void *) &c_buffer);
     checkErr(status, "clSetKernelArg() for mat_mult_kernel");
