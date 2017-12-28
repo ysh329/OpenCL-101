@@ -46,7 +46,7 @@
 
 #define     BENCHMARK
 #define     PRINT_EACH_BENCHMARK
-#define     DONT_PRINT_MATRIX_FLAG
+//#define     DONT_PRINT_MATRIX_FLAG
 #define     BENCHMARK_SKIP_TIMES             (1)
 
 /*================= USER DEFINITION LIB ===============*/
@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
            cpu_run_num = 0,
            gpu_run_num = 0,
            mat_trans_global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1},
+           mat_interleave_global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1},
            global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1};
 
     char mat_trans_kernel_file[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
@@ -92,7 +93,7 @@ int main(int argc, char *argv[]) {
          mat_mult_kernel_func[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
          cl_build_program_options[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D ";
     
-    if (argc == 16) {
+    if (argc == 21) {
     /*********************************
      0. argc[0] file name
      1. argc[1] m
@@ -232,8 +233,7 @@ int main(int argc, char *argv[]) {
     printf(">>> [INFO] %s %dx%dx%d %2.6lf s %2.6lf GFLOPS\n\n", "CPU", (int)m, (int)n, (int)k, ave_duration, gflops);
 
     #ifndef DONT_PRINT_MATRIX_FLAG
-    printf("c_h:\n");    
-    print_mat(c_h, n, m);
+    printf("c_h:\n");    print_mat(c_h, n, m);
     #endif // DONT_PRINT_MATRIX_FLAG
 
 #endif // MATRIX_MULT_CPU_ENABLE
@@ -245,14 +245,14 @@ int main(int argc, char *argv[]) {
     #ifndef DONT_PRINT_MATRIX_FLAG
     //printf("b:\n");
     //print_mat(b, n, k);
-    //printf("bT_h:\n");
-    //print_mat(bT_h, k, n);
+    printf("bT_h:\n");
+    print_mat(bT_h, k, n);
     #endif
     sum_duration = 0.0;
     for (int ridx; ridx < (cpu_run_num + BENCHMARK_SKIP_TIMES); ridx++) {
         gettimeofday(&start, NULL);
         // todo: inplace cpu mat-trans
-        //transpose_mat_inplace(b, k, n, bT_h);
+        // transpose_mat_inplace(b, k, n, bT_h);
         transpose_mat_naive(b, k, n, bT_h);
         gettimeofday(&end, NULL);
         duration = ((double)(end.tv_sec-start.tv_sec) + 
@@ -281,6 +281,15 @@ int main(int argc, char *argv[]) {
 
 #ifdef MATRIX_TRANS_GPU_ENABLE
     PRINT_LINE("GPU MATRIX TRANSPOSE");
+
+    int bT_height = n / 4;
+    int bT_width  = 4 * k;
+
+    #ifndef DONT_PRINT_MATRIX_FLAG
+    printf("bT_d:\n");
+    print_mat(bT_d, bT_width, bT_height);
+    #endif // DONT_PRINT_MATRIX_FLAG
+
     cl_int            status;
     cl_context        context;
     cl_command_queue  command_queue;
@@ -296,7 +305,6 @@ int main(int argc, char *argv[]) {
         exit(-1);
 	}
 
-    // mat_mult
     cl_mem b_buffer  = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_b, NULL, &status);
     cl_mem bT_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_b, NULL, &status);
 
@@ -405,7 +413,7 @@ int main(int argc, char *argv[]) {
 
     #ifndef DONT_PRINT_MATRIX_FLAG
     printf("bT_d:\n");
-    print_mat(bT_d, k, n);
+    print_mat(bT_d, bT_width, bT_height);
     #endif // DONT_PRINT_MATRIX_FLAG
 
 #endif // MATRIX_TRANS_GPU_ENABLE
@@ -417,9 +425,12 @@ int main(int argc, char *argv[]) {
 #ifdef MATRIX_INTERLEAVE_GPU_ENABLE
     PRINT_LINE("GPU INTERLEAVE");
 
+    int aI_height = m / 4;
+    int aI_width  = k * 4;
+
     #ifndef DONT_PRINT_MATRIX_FLAG
     printf("aI_d:\n");   
-    print_mat(aI_d, m, k);
+    print_mat(aI_d, aI_width, aI_height);
     #endif
 
 	if (-1 == opencl_create(&context, &command_queue, &program, cl_build_program_options, mat_mult_kernel_file))
@@ -496,12 +507,15 @@ int main(int argc, char *argv[]) {
     printf(">>> [INFO] %s %dx%d %2.6lf s %2.6lf GFLOPS\n\n", OCL_DEVICE_TYPE, (int)m, (int)k, ave_duration, gflops);
 
     // Copy result from device to host
-    status = clEnqueueReadBuffer(command_queue, a_buffer, CL_TRUE, 0, data_size_a, (void *)aI_d, 0, NULL, NULL);
+    status = clEnqueueReadBuffer(command_queue, aI_buffer, CL_TRUE, 0, data_size_a, (void *)aI_d, 0, NULL, NULL);
     checkErr(status, "clEnqueueReadBuffer() for mat_interleave_kernel");
 
+    #ifndef DONT_PRINT_MATRIX_FLAG
+    printf("aI_d:\n");   
+    print_mat(aI_d, aI_width, aI_height);
+    #endif
+
 #endif // MATRIX_INTERLEAVE_GPU_ENABLE
-
-
 
 
 
@@ -519,11 +533,11 @@ int main(int argc, char *argv[]) {
 	}
 
     // mat_mult
-    cl_mem a_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_a, NULL, &status);
+    aI_buffer       = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_a, NULL, &status);
     bT_buffer       = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_b, NULL, &status);
     cl_mem c_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_c, NULL, &status);
 
-    status  = clEnqueueWriteBuffer(command_queue, a_buffer,  CL_TRUE, 0, data_size_a, (void *)a,    0, NULL, NULL);
+    status  = clEnqueueWriteBuffer(command_queue, aI_buffer, CL_TRUE, 0, data_size_a, (void *)aI_d, 0, NULL, NULL);
     status |= clEnqueueWriteBuffer(command_queue, bT_buffer, CL_TRUE, 0, data_size_b, (void *)bT_d, 0, NULL, NULL);
     status |= clEnqueueWriteBuffer(command_queue, c_buffer,  CL_TRUE, 0, data_size_c, (void *)c_d,  0, NULL, NULL);
     if (status != CL_SUCCESS) {
@@ -545,8 +559,8 @@ int main(int argc, char *argv[]) {
 
     // estimate global_size and task_size
     printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", OCL_GLOBAL_WORK_SIZE_DIM, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
-    int global_size = (int) global_work_size[0] * (int) global_work_size[1] * (int) global_work_size[2];
-    int task_size = m * n;
+    global_size = (int) global_work_size[0] * (int) global_work_size[1] * (int) global_work_size[2];
+    task_size = m * n;
     if (global_size < task_size) {
         printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", global_size, task_size);
     }
