@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
     cl_mem aI_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_a, NULL, &status);
 
     status  = clEnqueueWriteBuffer(command_queue, a_buffer,  CL_TRUE, 0, data_size_a, (void *)a,    0, NULL, NULL);
-    status |= clEnqueueWriteBuffer(command_queue, aI_buffer, CL_TRUE, 0, data_size_b, (void *)aI_d, 0, NULL, NULL);
+    status |= clEnqueueWriteBuffer(command_queue, aI_buffer, CL_TRUE, 0, data_size_a, (void *)aI_d, 0, NULL, NULL);
 
     if (status != CL_SUCCESS) {
         printf(">>> [ERROR] failed to copy data from host to device: %d\n", (int)status);
@@ -464,13 +464,13 @@ int main(int argc, char *argv[]) {
     // estimate global_size and task_size
     printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", 
                 OCL_GLOBAL_WORK_SIZE_DIM, 
-                (int)global_work_size[0], 
-                (int)global_work_size[1], 
-                (int)global_work_size[2]);
-    int global_size = (int) global_work_size[0] * 
-                      (int) global_work_size[1] * 
-                      (int) global_work_size[2];
-    int task_size = m * n;
+                (int)mat_interleave_global_work_size[0], 
+                (int)mat_interleave_global_work_size[1], 
+                (int)mat_interleave_global_work_size[2]);
+    int global_size = (int)mat_interleave_global_work_size[0] * 
+                      (int)mat_interleave_global_work_size[1] * 
+                      (int)mat_interleave_global_work_size[2];
+    int task_size = m * k;
     if (global_size < task_size) {
         printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", global_size, task_size);
     }
@@ -485,7 +485,7 @@ int main(int argc, char *argv[]) {
         gettimeofday(&start, NULL);
         // run kernel
         clEnqueueNDRangeKernel(command_queue, mat_interleave_kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL,
-                               global_work_size,
+                               mat_interleave_global_work_size,
                                OCL_LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);
         clFinish(command_queue);
         gettimeofday(&end, NULL);
