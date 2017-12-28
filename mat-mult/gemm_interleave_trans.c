@@ -11,7 +11,7 @@ __kernel void mat_trans_vec4(const int k,
     const int row = get_global_id(1);
 
     CL_ELEM_TYPE bb = vload4(0, b+row*n+col);
-    vstore4(bb, 0, bT+(col) * (4*k) + row*4);
+    vstore4(bb, 0, bT+(col/4) * (4*k) + row*4);
 }
 
 
