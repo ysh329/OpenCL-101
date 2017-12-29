@@ -43,9 +43,9 @@ __kernel void mat_interleave_vec4(const int m,
 
 }
 
-__kernel void gemm_interleaved_transposed_vec4(const int aI_height,
-                                               const int bT_height, //n
-                                               const int aI_width, // col number of aI or bT
+__kernel void gemm_interleaved_transposed_vec4(const int aI_height, // height of aI
+                                               const int bT_height, // height of bT
+                                               const int aI_width,  // width of aI or bT
                                                __global const CL_INPUT_TYPE *aI,
                                                __global const CL_INPUT_TYPE *bT,
                                                __global       CL_INPUT_TYPE *c) {
