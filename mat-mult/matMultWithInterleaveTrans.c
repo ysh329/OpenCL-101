@@ -9,8 +9,9 @@
 // Type on Host (CPU)
 #define     ELEM_TYPE                        float
 #define     ELEM_TYPE_STR                    "float"
+
 // Type on Device (GPU)
-#define     CL_ELEM_TYPE                     cl_float4
+#define     CL_ELEM_TYPE                     cl_float
 #define     CL_ELEM_TYPE_STR                 "float4"
 
 /*================= OTHER OCL PARAMETERS ==============*/
@@ -46,7 +47,7 @@
 
 #define     BENCHMARK
 #define     PRINT_EACH_BENCHMARK
-//#define     DONT_PRINT_MATRIX_FLAG
+#define     DONT_PRINT_MATRIX_FLAG
 #define     BENCHMARK_SKIP_TIMES             (1)
 
 /*================= USER DEFINITION LIB ===============*/
@@ -576,9 +577,17 @@ int main(int argc, char *argv[]) {
     for (int ridx = 0; ridx < (gpu_run_num+1); ridx++) {
         gettimeofday(&start, NULL);
         // run kernel
+        /*
         clEnqueueNDRangeKernel(command_queue, mat_mult_kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL,
                                mat_mult_global_work_size,
                                OCL_LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);
+        */
+        //*
+        size_t mat_mult_local_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {4, 4, 1};
+        clEnqueueNDRangeKernel(command_queue, mat_mult_kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL,
+                               mat_mult_global_work_size,
+                               mat_mult_local_work_size, 0, NULL, &event);
+        //*/
         clFinish(command_queue);
         gettimeofday(&end, NULL);
         duration = ((double)(end.tv_sec-start.tv_sec) +
