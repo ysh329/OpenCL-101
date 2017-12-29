@@ -57,6 +57,7 @@ __kernel void gemm_interleaved_transposed_vec4(const int m,
                  c20 = 0.0f,
                  c30 = 0.0f;
 
+/*
     for (int p = 0; p < k; p += 4) {
         CL_ELEM_TYPE aa = vload4(0, aI + row * k + p),
                      bb = vload4(0, bT + col * k + p);
@@ -67,10 +68,30 @@ __kernel void gemm_interleaved_transposed_vec4(const int m,
         c30 += (CL_ELEM_TYPE)aa.s3 * bb;
 
     }
+*/
+//*
+    for (int p = 0; p < k; p += 8) {
+        CL_ELEM_TYPE 
+        aa = vload4(0, aI + row * k + p),
+        bb = vload4(0, bT + row * k + p);
 
+        c00 += (CL_ELEM_TYPE)aa.s0 * bb;
+        c10 += (CL_ELEM_TYPE)aa.s1 * bb;
+        c20 += (CL_ELEM_TYPE)aa.s2 * bb;
+        c30 += (CL_ELEM_TYPE)aa.s3 * bb;
+
+        aa = vload4(0, aI + row * k + p+4);
+        bb = vload4(0, bT + row * k + p+4);
+
+        c00 += (CL_ELEM_TYPE)aa.s0 * bb;
+        c10 += (CL_ELEM_TYPE)aa.s1 * bb;
+        c20 += (CL_ELEM_TYPE)aa.s2 * bb;
+        c30 += (CL_ELEM_TYPE)aa.s3 * bb;
+
+    }
+//*/
     vstore4(c00, 0, c+(row*4  ) * (n*4) + (col*4));
     vstore4(c10, 0, c+(row*4+1) * (n*4) + (col*4));
     vstore4(c20, 0, c+(row*4+2) * (n*4) + (col*4));
     vstore4(c30, 0, c+(row*4+3) * (n*4) + (col*4));
-
 }
