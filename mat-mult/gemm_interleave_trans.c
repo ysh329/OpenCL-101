@@ -68,9 +68,9 @@ __kernel void gemm_interleaved_transposed_vec4(const int m,
 
     }
 
-    vstore4(c00, 0, c+(row  ) * (n*4) + (col*4));
-    vstore4(c10, 0, c+(row+1) * (n*4) + (col*4));
-    vstore4(c20, 0, c+(row+2) * (n*4) + (col*4));
-    vstore4(c30, 0, c+(row+3) * (n*4) + (col*4));
+    vstore4(c00, 0, c+(row*4  ) * (n*4) + (col*4));
+    vstore4(c10, 0, c+(row*4+1) * (n*4) + (col*4));
+    vstore4(c20, 0, c+(row*4+2) * (n*4) + (col*4));
+    vstore4(c30, 0, c+(row*4+3) * (n*4) + (col*4));
 
 }

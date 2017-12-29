@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
            gpu_run_num = 0,
            mat_trans_global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1},
            mat_interleave_global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1},
-           global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1};
+           mat_mult_global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1};
 
     char mat_trans_kernel_file[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
          mat_trans_kernel_func[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
@@ -127,9 +127,9 @@ int main(int argc, char *argv[]) {
         // matrix multiplication for A and B
         strcpy(mat_mult_kernel_file, argv[14]);
         strcpy(mat_mult_kernel_func, argv[15]);
-        global_work_size[0] = atoi( argv[17] );  // M: global_work_size[1]
-        global_work_size[1] = atoi( argv[16] );  // N: global_work_size[0]
-        global_work_size[2] = atoi( argv[18] ); // default global_work_size[2]: 1
+        mat_mult_global_work_size[0] = atoi( argv[17] );  // M: global_work_size[1]
+        mat_mult_global_work_size[1] = atoi( argv[16] );  // N: global_work_size[0]
+        mat_mult_global_work_size[2] = atoi( argv[18] ); // default global_work_size[2]: 1
         // execution times for gpu and cpu
         cpu_run_num = atoi( argv[19] );
         gpu_run_num = atoi( argv[20] );
@@ -523,7 +523,6 @@ int main(int argc, char *argv[]) {
 #ifdef MATRIX_MULT_GPU_ENABLE
     
     PRINT_LINE("GPU MATRIX MULTIPLICATION");
-    cl_kernel         mat_mult_kernel;
     // get platform, deviceIDs, create Context, create command_queue,
     // load_cl_source, createProgramWithSource, BuildProgram
 	if (-1 == opencl_create(&context, &command_queue, &program, cl_build_program_options, mat_mult_kernel_file))
@@ -546,20 +545,26 @@ int main(int argc, char *argv[]) {
     }
 
     // create kernel and set kernel args
-    mat_mult_kernel = clCreateKernel(program, mat_mult_kernel_func, &status);
+    cl_kernel mat_mult_kernel = clCreateKernel(program, mat_mult_kernel_func, &status);
     checkErr(status, "clCreateKernel() for mat_mult_kernel");
 
     status  = clSetKernelArg(mat_mult_kernel, 0, sizeof(cl_int), (void *) &aI_height);
-    status |= clSetKernelArg(mat_mult_kernel, 1, sizeof(cl_int), (void *) &bT_width);
-    status |= clSetKernelArg(mat_mult_kernel, 2, sizeof(cl_int), (void *) &aI_width);
+    status |= clSetKernelArg(mat_mult_kernel, 1, sizeof(cl_int), (void *) &bT_height);
+    status |= clSetKernelArg(mat_mult_kernel, 2, sizeof(cl_int), (void *) &bT_width);
     status |= clSetKernelArg(mat_mult_kernel, 3, sizeof(cl_mem), (void *) &aI_buffer);
     status |= clSetKernelArg(mat_mult_kernel, 4, sizeof(cl_mem), (void *) &bT_buffer);
     status |= clSetKernelArg(mat_mult_kernel, 5, sizeof(cl_mem), (void *) &c_buffer);
     checkErr(status, "clSetKernelArg() for mat_mult_kernel");
 
     // estimate global_size and task_size
-    printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", OCL_GLOBAL_WORK_SIZE_DIM, (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2]);
-    global_size = (int) global_work_size[0] * (int) global_work_size[1] * (int) global_work_size[2];
+    printf(">>> [INFO] global_work_size[%d]: { %d, %d, %d }\n", 
+                OCL_GLOBAL_WORK_SIZE_DIM, 
+                (int)mat_mult_global_work_size[0], 
+                (int)mat_mult_global_work_size[1], 
+                (int)mat_mult_global_work_size[2]);
+    global_size = (int) mat_mult_global_work_size[0] * 
+                  (int) mat_mult_global_work_size[1] *
+                  (int) mat_mult_global_work_size[2];
     task_size = m * n;
     if (global_size < task_size) {
         printf(">>> [WARN] global work size (%d) is smaller than task size (%d)\n", global_size, task_size);
@@ -572,7 +577,7 @@ int main(int argc, char *argv[]) {
         gettimeofday(&start, NULL);
         // run kernel
         clEnqueueNDRangeKernel(command_queue, mat_mult_kernel, OCL_GLOBAL_WORK_SIZE_DIM, NULL,
-                               global_work_size,
+                               mat_mult_global_work_size,
                                OCL_LOCAL_WORK_SIZE_POINTER, 0, NULL, &event);
         clFinish(command_queue);
         gettimeofday(&end, NULL);
