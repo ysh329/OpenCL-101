@@ -122,13 +122,16 @@ void transpose_mat_inplace(ELEM_TYPE *a, int height, int width, ELEM_TYPE *res) 
 // row-major
 int equal_mat(ELEM_TYPE *a, ELEM_TYPE *b, int width, int height) {
     int correct_num = 0;
-    for (int r = 0; r < height; r++)
-        for (int c = 0; c < width; c++) 
-            if (a[r*width + c] == b[r*width + c])
+    for (int r = 0; r < height; r++) {
+        for (int c = 0; c < width; c++) {
+            if ( abs(a[r*width+c] - b[r*width+c]) < (ELEM_TYPE)1.0 ) {
                 correct_num += 1;
+            }
+        }
+    }
 
-    float correct_rate = (float) correct_num / ( width * height );
-    printf(">>> [TEST] correct rate: %.4f\n", correct_rate);
+    float correct_rate = (float) correct_num / (float)( width * height );
+    printf(">>> [TEST] correct rate(%d/%d): %.4f\n", correct_num, width*height, correct_rate);
     if (1.0 - correct_rate < 10e-6)
         printf(">>> [TEST] ~ Bingo ~ matrix a == matrix b\n\n");
     else
@@ -138,12 +141,14 @@ int equal_mat(ELEM_TYPE *a, ELEM_TYPE *b, int width, int height) {
 
 int equal_vec(ELEM_TYPE *a, ELEM_TYPE *b, int len) {
     int correct_num = 0;
-    for (int idx = 0; idx < len; idx++) 
-        if (a[idx] - b[idx] < (ELEM_TYPE)1.0)
+    for (int idx = 0; idx < len; idx++) {
+        if ( abs(a[idx]-b[idx]) < (ELEM_TYPE)1.0 ) {
             correct_num += 1;
+        }
+    }
 
     float correct_rate = (float) correct_num / (float) len;
-    printf(">>> [TEST] correct rate: %.4f\n", correct_rate);
+    printf(">>> [TEST] correct rate(%d/%d): %.4f\n", correct_num, len, correct_rate);
     if (1.0 - correct_rate < 10e-6)
         printf(">>> [TEST] ~ Bingo ~ matrix a == matrix b\n\n");
     else
