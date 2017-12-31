@@ -106,3 +106,57 @@ __kernel void gemm_interleaved_transposed_vec4(const int aI_height, // height of
     vstore4(c20, 0, c+(row*VEC_LEN+2) * (bT_height*VEC_LEN) + (col*VEC_LEN));
     vstore4(c30, 0, c+(row*VEC_LEN+3) * (bT_height*VEC_LEN) + (col*VEC_LEN));
 }
+
+
+
+__kernel void gemm_interleaved_transposed_vec8(const int aI_height, // height of aI
+                                               const int bT_height, // height of bT
+                                               const int aI_width,  // width of aI or bT
+                                               __global const CL_INPUT_TYPE *aI,
+                                               __global const CL_INPUT_TYPE *bT,
+                                               __global       CL_INPUT_TYPE *c) {
+#ifndef USE_LOCAL_WOKR_SIZE
+    const int col = get_global_id(0); // col of bT: [0, n/4) <==> [0, bT_height)
+    const int row = get_global_id(1); // row of aI: [0, m/4) <==> [0, aI_height)
+#else
+    const int col = get_group_id(1) * VEC_LEN + get_local_id(1);
+    const int row = get_group_id(0) * VEC_LEN + get_local_id(0);
+#endif
+
+    CL_ELEM_TYPE c00 = 0.0,
+                 c10 = 0.0,
+                 c20 = 0.0,
+                 c30 = 0.0;
+
+    for (int p = 0; p < aI_width; p += 8) {
+        CL_ELEM_TYPE
+        aa = vload8(0, aI + row * aI_width + p),
+        bb = vload8(0, bT + col * aI_width + p);
+
+        c00 += (CL_ELEM_TYPE)aa.s0 * bb;
+        c10 += (CL_ELEM_TYPE)aa.s1 * bb; 
+        c20 += (CL_ELEM_TYPE)aa.s2 * bb;
+        c30 += (CL_ELEM_TYPE)aa.s3 * bb;
+
+        aa = vload8(0, aI + row * aI_width + p+VEC_LEN);
+        bb = vload8(0, bT + col * aI_width + p+VEC_LEN);
+
+        c00 += (CL_ELEM_TYPE)aa.s0 * bb;
+        c10 += (CL_ELEM_TYPE)aa.s1 * bb; 
+        c20 += (CL_ELEM_TYPE)aa.s2 * bb;
+        c30 += (CL_ELEM_TYPE)aa.s3 * bb;
+
+        aa = vload8(0, aI + row * aI_width + p+VEC_LEN*2);
+        bb = vload8(0, bT + col * aI_width + p+VEC_LEN*2);
+
+        c00 += (CL_ELEM_TYPE)aa.s0 * bb;
+        c10 += (CL_ELEM_TYPE)aa.s1 * bb; 
+        c20 += (CL_ELEM_TYPE)aa.s2 * bb;
+        c30 += (CL_ELEM_TYPE)aa.s3 * bb;
+    }
+
+    vstore8(c00, 0, c+(row*VEC_LEN  ) * (bT_height*VEC_LEN) + (col*VEC_LEN));
+    vstore8(c10, 0, c+(row*VEC_LEN+1) * (bT_height*VEC_LEN) + (col*VEC_LEN));
+    vstore8(c20, 0, c+(row*VEC_LEN+2) * (bT_height*VEC_LEN) + (col*VEC_LEN));
+    vstore8(c30, 0, c+(row*VEC_LEN+3) * (bT_height*VEC_LEN) + (col*VEC_LEN));
+}
