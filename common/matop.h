@@ -120,7 +120,7 @@ void transpose_mat_inplace(ELEM_TYPE *a, int height, int width, ELEM_TYPE *res) 
 }
 
 // row-major
-int equal_mat(ELEM_TYPE *a, ELEM_TYPE *b, int width, int height) {
+float equal_mat(ELEM_TYPE *a, ELEM_TYPE *b, int width, int height) {
     int correct_num = 0;
     for (int r = 0; r < height; r++) {
         for (int c = 0; c < width; c++) {
@@ -132,14 +132,15 @@ int equal_mat(ELEM_TYPE *a, ELEM_TYPE *b, int width, int height) {
 
     float correct_rate = (float) correct_num / (float)( width * height );
     printf(">>> [TEST] correct rate(%d/%d): %.4f\n", correct_num, width*height, correct_rate);
-    if (1.0 - correct_rate < 10e-6)
+    if (1.0 - correct_rate < 10e-6) 
         printf(">>> [TEST] ~ Bingo ~ matrix a == matrix b\n\n");
-    else
-        printf(">>> [TEST] matrix a is equal to matrix b\n\n");
-    return 1;
+    else 
+        printf(">>> [TEST] matrix a is not equal to matrix b\n\n");
+
+    return correct_num;
 }
 
-int equal_vec(ELEM_TYPE *a, ELEM_TYPE *b, int len) {
+float equal_vec(ELEM_TYPE *a, ELEM_TYPE *b, int len) {
     int correct_num = 0;
     for (int idx = 0; idx < len; idx++) {
         if ( abs(a[idx]-b[idx]) < (ELEM_TYPE)1.0 ) {
@@ -153,7 +154,7 @@ int equal_vec(ELEM_TYPE *a, ELEM_TYPE *b, int len) {
         printf(">>> [TEST] ~ Bingo ~ matrix a == matrix b\n\n");
     else
         printf(">>> [TEST] matrix a is NOT equal to matrix b\n\n");
-    return 1;
+    return correct_rate;
 }
 
 void dotprod_mat(ELEM_TYPE *a, ELEM_TYPE *b, ELEM_TYPE *res, int len) {
