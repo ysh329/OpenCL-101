@@ -1,4 +1,4 @@
-# gemm-opt
+# mat-mult
 
 ## Setup
 
@@ -37,7 +37,7 @@ $ ./matMultWithInterleaveTrans
 >>> [USAGE] ./matMultWithInterleaveTrans M N K \
             TRANS_KERNEL_PATH      TRANS_KERNEL_FUNC_NAME       GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \
             INTERLEAVE_KERNEL_PATH INTERLEAVE__KERNEL_FUNC_NAME GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \
-            MULT_KERNEL_PATH       MULT_KERNEL_FUNC_NAME        GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \
+            MULT_KERNEL_PATH       MULT_KERNEL_FUNC_NAME        GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]   LOCAL_WORK_SIZE[0] LOCAL_WORK_SIZE[1] LOCAL_WORK_SIZE[2] \
             CPU_BENCHMARK_TIMES    GPU_BENCHMARK_TIMES
 >>> [ERROR] please input args
 ```
@@ -47,7 +47,7 @@ According to usage, run an example of `FP32, VEC_LEN=4, M=N=1024, K=1020` gemm a
 ./matMultWithInterleaveTrans 1024 1024 1020 \
 ./gemm_interleave_trans.c mat_trans_vec4 1020 256 1 \
 ./gemm_interleave_trans.c mat_interleave_vec4  256 255 1 \
-./gemm_interleave_trans.c gemm_interleaved_transposed_vec4 $[256/1] $[256/1] 1 \
+./gemm_interleave_trans.c gemm_interleaved_transposed_vec4 $[256/1] $[256/1] 1    4 4 1 \
 1 10
 ```
 

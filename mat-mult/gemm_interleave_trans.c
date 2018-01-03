@@ -65,8 +65,8 @@ __kernel void gemm_interleaved_transposed_vec4(const int aI_height, // height of
     const int col = get_global_id(0); // col of bT: [0, n/4) <==> [0, bT_height)
     const int row = get_global_id(1); // row of aI: [0, m/4) <==> [0, aI_height)
 #else
-    const int col = get_group_id(1) * VEC_LEN + get_local_id(1);
-    const int row = get_group_id(0) * VEC_LEN + get_local_id(0);
+    const int row = get_group_id(1) * VEC_LEN + get_local_id(1);
+    const int col = get_group_id(0) * VEC_LEN + get_local_id(0);
 #endif
 
     CL_ELEM_TYPE c00 = 0.0,
@@ -91,7 +91,7 @@ __kernel void gemm_interleaved_transposed_vec4(const int aI_height, // height of
         c10 += (CL_ELEM_TYPE)aa.s1 * bb; 
         c20 += (CL_ELEM_TYPE)aa.s2 * bb;
         c30 += (CL_ELEM_TYPE)aa.s3 * bb;
-
+//*
         aa = vload4(0, aI + row * aI_width + p+VEC_LEN*2);
         bb = vload4(0, bT + col * aI_width + p+VEC_LEN*2);
 
@@ -99,6 +99,7 @@ __kernel void gemm_interleaved_transposed_vec4(const int aI_height, // height of
         c10 += (CL_ELEM_TYPE)aa.s1 * bb; 
         c20 += (CL_ELEM_TYPE)aa.s2 * bb;
         c30 += (CL_ELEM_TYPE)aa.s3 * bb;
+//*/
     }
 
     vstore4(c00, 0, c+(row*VEC_LEN  ) * (bT_height*VEC_LEN) + (col*VEC_LEN));
@@ -108,7 +109,7 @@ __kernel void gemm_interleaved_transposed_vec4(const int aI_height, // height of
 }
 
 
-
+/*
 __kernel void gemm_interleaved_transposed_vec8(const int aI_height, // height of aI
                                                const int bT_height, // height of bT
                                                const int aI_width,  // width of aI or bT
@@ -160,3 +161,4 @@ __kernel void gemm_interleaved_transposed_vec8(const int aI_height, // height of
     vstore8(c20, 0, c+(row*VEC_LEN+2) * (bT_height*VEC_LEN) + (col*VEC_LEN));
     vstore8(c30, 0, c+(row*VEC_LEN+3) * (bT_height*VEC_LEN) + (col*VEC_LEN));
 }
+*/

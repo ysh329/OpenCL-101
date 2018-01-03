@@ -9,7 +9,7 @@
 
 #define         VEC_LEN                          (4)
 #define         VEC_LEN_STR                      "4"
-#define         FP16
+#define         FP32
 
 #ifdef FP16
     // Type on Host (CPU)
@@ -105,7 +105,8 @@ int main(int argc, char *argv[]) {
            gpu_run_num = 0,
            mat_trans_global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1},
            mat_interleave_global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1},
-           mat_mult_global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1};
+           mat_mult_global_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1},
+           mat_mult_local_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1};
 
     char mat_trans_kernel_file[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
          mat_trans_kernel_func[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
@@ -115,21 +116,36 @@ int main(int argc, char *argv[]) {
          mat_mult_kernel_func[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN],
          cl_build_program_options[OCL_KERNEL_FILE_AND_FUNC_MAX_LEN] = "-D ";
     
-    if (argc == 21) {
+    if (argc == 24) {
     /*********************************
      0. argc[0] file name
      1. argc[1] m
      2. argc[2] n
      3. argc[3] k
+
      4. argc[4] mat_trans_kernel_file
      5. argc[5] mat_trans_kernel_func
-     6. argc[6] mat_mult_kernel_file
-     7. argc[7] mat_mult_kernel_func
-     8. argc[8] cpu_run_num
-     9. argc[9] gpu_rum_num
-    10. argc[10] global_work_size[0]
-    11. argc[11] global_work_size[1]
-    12. argc[12] global_work_size[2]
+     6. argc[6] mat_trans_global_work_size[0]
+     7. argc[7] mat_trans_global_work_size[1]
+     8. argc[8] mat_trans_global_work_size[2]
+
+     9. argc[9] mat_interleave_kernel_file
+    10. argc[10]mat_interleave_kernel_func
+    11. argc[11]mat_interleave_global_work_size[0]
+    12. argc[12]mat_interleave_global_work_size[1]
+    13. argc[13]mat_interleave_global_work_size[2]
+
+    14. argc[14]mat_mult_kernel_file
+    15. argc[15]mat_mult_kernel_func
+    16. argc[16]mat_mult_global_work_size[0]
+    17. argc[17]mat_mult_global_work_size[1]
+    18. argc[18]mat_mult_global_work_size[2]
+    19. argc[19]mat_mult_local_work_size[0]
+    20. argc[20]mat_mult_local_work_size[1]
+    21. argc[21]mat_mult_local_work_size[2]
+
+    22. argc[22] cpu_run_num
+    23. argc[23] gpu_rum_num
     *********************************/
         m = atoi( argv[1] );
         n = atoi( argv[2] );
@@ -152,15 +168,19 @@ int main(int argc, char *argv[]) {
         mat_mult_global_work_size[0] = atoi( argv[17] );  // M: global_work_size[1]
         mat_mult_global_work_size[1] = atoi( argv[16] );  // N: global_work_size[0]
         mat_mult_global_work_size[2] = atoi( argv[18] ); // default global_work_size[2]: 1
+
+        mat_mult_local_work_size[0] = atoi( argv[20] );
+        mat_mult_local_work_size[1] = atoi( argv[19] );
+        mat_mult_local_work_size[2] = atoi( argv[21] );
         // execution times for gpu and cpu
-        cpu_run_num = atoi( argv[19] );
-        gpu_run_num = atoi( argv[20] );
+        cpu_run_num = atoi( argv[22] );
+        gpu_run_num = atoi( argv[23] );
     }
     else {
         printf(">>> [USAGE] %s M N K \\\n", argv[0]);
         printf("            TRANS_KERNEL_PATH      TRANS_KERNEL_FUNC_NAME       GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \\\n");
         printf("            INTERLEAVE_KERNEL_PATH INTERLEAVE__KERNEL_FUNC_NAME GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \\\n");
-        printf("            MULT_KERNEL_PATH       MULT_KERNEL_FUNC_NAME        GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2] \\\n");
+        printf("            MULT_KERNEL_PATH       MULT_KERNEL_FUNC_NAME        GLOBAL_WORK_SIZE[0] GLOBAL_WORK_SIZE[1] GLOBAL_WORK_SIZE[2]   LOCAL_WORK_SIZE[0] LOCAL_WORK_SIZE[1] LOCAL_WORK_SIZE[2] \\\n");
         printf("            CPU_BENCHMARK_TIMES    GPU_BENCHMARK_TIMES\n");
         printf(">>> [ERROR] please input args\n");
         exit(-1);
@@ -547,13 +567,24 @@ int main(int argc, char *argv[]) {
 	}
 
     // mat_mult
+    //*
     aI_buffer       = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_a, NULL, &status);
     bT_buffer       = clCreateBuffer(context, CL_MEM_READ_ONLY,  data_size_b, NULL, &status);
     cl_mem c_buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, data_size_c, NULL, &status);
-
     status  = clEnqueueWriteBuffer(command_queue, aI_buffer, CL_TRUE, 0, data_size_a, (void *)aI_d, 0, NULL, NULL);
     status |= clEnqueueWriteBuffer(command_queue, bT_buffer, CL_TRUE, 0, data_size_b, (void *)bT_d, 0, NULL, NULL);
     status |= clEnqueueWriteBuffer(command_queue, c_buffer,  CL_TRUE, 0, data_size_c, (void *)c_d,  0, NULL, NULL);
+    //*/
+
+    /*
+    aI_buffer       = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR,
+                                     data_size_a, aI_d, &status);
+    bT_buffer       = clCreateBuffer(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR,
+                                     data_size_b, bT_d, &status);
+    cl_mem c_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR,
+                                     data_size_c, c_d,  &status);
+    */
+
     if (status != CL_SUCCESS) {
         printf(">>> [ERROR] failed to copy data from host to device: %d\n", (int)status);
         goto error;
@@ -573,9 +604,9 @@ int main(int argc, char *argv[]) {
 
     // estimate global_size and task_size
     #ifdef USE_LOCAL_WORK_SIZE
-        size_t mat_mult_local_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {VEC_LEN, VEC_LEN, 1};
+        ;//size_t mat_mult_local_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {VEC_LEN, VEC_LEN, 1};
     #else
-        size_t mat_mult_local_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1};
+        mat_mult_local_work_size[OCL_GLOBAL_WORK_SIZE_DIM] = {1, 1, 1};
     #endif
     printf(">>> [INFO] aI_height: %d\t bT_height: %d\t bT_width/aI_width: %d/%d \n",
                        aI_height, bT_height, bT_width, aI_width);
@@ -628,15 +659,26 @@ int main(int argc, char *argv[]) {
         }
         sum_duration += duration;
     }
+
+    status = clEnqueueReadBuffer(command_queue, c_buffer, CL_TRUE, 0, data_size_c, (void *)c_d, 0, NULL, NULL);
+    checkErr(status, "clEnqueueReadBuffer() for mat_mult_kernel");
+
     ave_duration = sum_duration / (double)gpu_run_num;
     gflops = 2.0 * m * n * k;
     gflops = gflops / ave_duration * 1.0e-9;
     gbps = 0;
-    printf(">>> [INFO] %s %dx%dx%d %2.6lf s %2.6lf GFLOPS\n\n", OCL_DEVICE_TYPE, (int)m, (int)n, (int)k, ave_duration, gflops);
+    printf(">>> [INFO] %1.2f %s %dx%dx%d {%d, %d, %d} {%d, %d, %d} %2.6lf s %2.6lf GFLOPS\n\n",
+                equal_vec(c_h, c_d, len_c),
+                OCL_DEVICE_TYPE, (int)m, (int)n, (int)k,
+                (int)mat_mult_global_work_size[0],
+                (int)mat_mult_global_work_size[1],
+                (int)mat_mult_global_work_size[2],
+                (int)mat_mult_local_work_size[0],
+                (int)mat_mult_local_work_size[1],
+                (int)mat_mult_local_work_size[2],
+                ave_duration, gflops);
 
     // Copy result from device to host
-    status = clEnqueueReadBuffer(command_queue, c_buffer, CL_TRUE, 0, data_size_c, (void *)c_d, 0, NULL, NULL);
-    checkErr(status, "clEnqueueReadBuffer() for mat_mult_kernel");
 
     equal_vec(c_h, c_d, len_c);
 

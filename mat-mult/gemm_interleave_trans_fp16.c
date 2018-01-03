@@ -77,8 +77,8 @@ __kernel void gemm_interleaved_transposed_vec4(const int aI_height, // height of
                                                __global const CL_INPUT_TYPE *bT,
                                                __global       CL_INPUT_TYPE *c) {
 #ifndef USE_LOCAL_WOKR_SIZE
-    const int col = get_global_id(0); // col of bT: [0, n/4) <==> [0, bT_height)
-    const int row = get_global_id(1); // row of aI: [0, m/4) <==> [0, aI_height)
+    const int col = get_global_id(0); // col of bT: [0, n/VEC_LEN) <==> [0, bT_height)
+    const int row = get_global_id(1); // row of aI: [0, m/VEC_LEN) <==> [0, aI_height)
 #else
     const int col = get_group_id(1) * VEC_LEN + get_local_id(1);
     const int row = get_group_id(0) * VEC_LEN + get_local_id(0);
@@ -93,7 +93,7 @@ __kernel void gemm_interleaved_transposed_vec4(const int aI_height, // height of
                  c60 = 0.0,
                  c70 = 0.0;
 
-    for (int p = 0; p < aI_width; p += 24) {
+    for (int p = 0; p < aI_width; p += 16) {
         CL_ELEM_TYPE
         aa = vload8(0, aI + row * aI_width + p),
         bb = vload8(0, bT + col * aI_width + p);
@@ -119,7 +119,7 @@ __kernel void gemm_interleaved_transposed_vec4(const int aI_height, // height of
         c60 += (CL_ELEM_TYPE)aa.s6 * bb;
         c70 += (CL_ELEM_TYPE)aa.s7 * bb;
 //*/
-//*
+/*
         aa = vload8(0, aI + row * aI_width + p+VEC_LEN*2);
         bb = vload8(0, bT + col * aI_width + p+VEC_LEN*2);
 
@@ -127,7 +127,7 @@ __kernel void gemm_interleaved_transposed_vec4(const int aI_height, // height of
         c10 += (CL_ELEM_TYPE)aa.s1 * bb; 
         c20 += (CL_ELEM_TYPE)aa.s2 * bb;
         c30 += (CL_ELEM_TYPE)aa.s3 * bb;
-//*/
+*/
 
     }
 
