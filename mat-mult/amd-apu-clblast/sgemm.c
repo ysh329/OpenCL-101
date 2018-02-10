@@ -35,7 +35,7 @@ int main(void) {
   const size_t device_id = 0;
 
   // Example SGEMM arguments
-  const size_t m = 2048*2;
+  const size_t m = 1024*2;
   const size_t n = m;
   const size_t k = m;
   const float alpha = 1.0f;
@@ -106,10 +106,10 @@ int main(void) {
       if (ridx >= 1) {
           sum_duration += duration;
       }
-     // printf("%2d\t%.6f\n", ridx+1, duration);
+      printf("%2d\t%.6f\n", ridx+1, duration);
   }
 
-          clReleaseEvent(event);
+  clReleaseEvent(event);
   ave_duration = sum_duration / run_times;
   gflops = 2.0 * m * n * k / ave_duration * 1.0e-9;
   printf(">>> [BENCHMARK] %d x %d x %d \t %.6f sec %2.6lf GFLOPS\n", (int)m, (int)n, (int)k, ave_duration, gflops);
