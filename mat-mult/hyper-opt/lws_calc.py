@@ -48,13 +48,13 @@ def gen_cmd(lws_tuple_list):
     cmd_list = []
     for lws_tuple in lws_tuple_list:
         cmd = \
-    """./matMultWithInterleaveTrans 1024 1024 1020 \
+    """../matMultWithInterleaveTrans 1024 1024 1020 \
 ./gemm_interleave_trans.c mat_trans_vec4 1020 256 1 \
 ./gemm_interleave_trans.c mat_interleave_vec4  256 255 1 \
 ./gemm_interleave_trans.c gemm_interleaved_transposed_vec4 256 256 1   {0} {1} 1 \
 1 100 """.format(lws_tuple[0], lws_tuple[1])
 #        cmd = \
-#    """./matMultWithInterleaveTrans 2048 2048 2040 \
+#    """../matMultWithInterleaveTrans 2048 2048 2040 \
 #./gemm_interleave_trans.c mat_trans_vec4 2040 512 1 \
 #./gemm_interleave_trans.c mat_interleave_vec4 512 510 1 \
 #./gemm_interleave_trans.c gemm_interleaved_transposed_vec4 512 512 1    {0} {1} 1 \
