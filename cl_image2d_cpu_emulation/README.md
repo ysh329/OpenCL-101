@@ -1,3 +1,4 @@
+```shell
 ========= init NCHW Layout =========
 N:1
 C:5
@@ -48,4 +49,4 @@ image_height:3
 
 3	6	9	12	
 15	0	0	0	
-
+```

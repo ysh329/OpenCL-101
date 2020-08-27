@@ -1,1 +1,1 @@
-g++ ./layout.cc && ./a.out
+g++ ./layout.cc -o layout.out && ./layout.out
