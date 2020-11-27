@@ -6,23 +6,23 @@ int main() {
 
   std::vector<size_t> input_shape(4);
   input_shape[0] = 1;
-  input_shape[1] = 9;
-  input_shape[2] = 15;
-  input_shape[3] = 15;//42;
+  input_shape[1] = 64;
+  input_shape[2] = 64;
+  input_shape[3] = 64;//42;
   size_t N = input_shape[0];
   size_t C = input_shape[1];
   size_t H = input_shape[2];
   size_t W = input_shape[3];
   size_t buffer_size = N * C * H * W;
   float *p = init_matrix(input_shape, -1, "NCHW Layout");
-  print_matrix(input_shape, p, "NCHW Layout");
+  //print_matrix(input_shape, p, "NCHW Layout");
 
   std::vector<size_t> image_shape = tensor_shape_to_image_shape(input_shape);
   size_t image_size = image_shape[0] * image_shape[1] * 4;
   size_t image_width = image_shape[0];  // (C+3)/4*W
   size_t w_block = image_width / W;  // (C+3)/4
   float *image = init_matrix(image_shape, 0, "image");
-  print_matrix(image_shape, image, "image");
+  //print_matrix(image_shape, image, "image");
 
 #if 1
   size_t i0 = 0;
@@ -64,8 +64,11 @@ int main() {
   }
 #endif
 
-  print_matrix(image_shape, image, "filled image");
-  print_image_pixel(image, image_shape[0], image_shape[1], 29, 14);
-  print_image_pixel(image, image_shape[0], image_shape[1], 14, 14);
+  //print_matrix(image_shape, image, "filled image");
+  for (size_t h = 0; h < 10; ++h) {
+    for (size_t w = 0; w < 10; ++w) {
+      print_image_pixel(image, image_shape[0], image_shape[1], w, h);
+    }
+  }
   return 0;
 }

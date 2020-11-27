@@ -26,6 +26,22 @@ float* init_matrix(std::vector<size_t> shape, float value = -1, std::string name
   return p;
 }
 
+float* init_image(float* tensor, std::vector<size_t> shape, std::vector<size_t> image_shape) {
+  if (!tensor) {
+    std::cout << "nullptr";
+    exit(1);
+  }
+
+  
+}
+
+void free_image(float* image) {
+  if (image) {
+    free(image);
+    image = NULL;
+  }
+}
+
 void print_matrix(std::vector<size_t> shape, float* p, std::string name="") {
   std::cout << "========= print " << name << " ===========" << std::endl;
   bool is_buffer = shape.size() == 2 ? false : true;
@@ -86,6 +102,7 @@ void print_image_pixel(float* image, size_t image_width, size_t image_height, si
     std::cout << image[start_idx + i] ;
     if (i < 3) std::cout << ",";
   }
+  std::cout << " buffer_idx:" << start_idx << "," << start_idx + 1 << "," << start_idx + 2 << "," << start_idx + 3;
   std::cout << std::endl;
 }
 
