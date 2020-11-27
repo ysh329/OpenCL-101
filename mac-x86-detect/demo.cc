@@ -25,7 +25,7 @@ void displayPlatformInfo(cl_platform_id id,
   cl_int cl_status = 0;
   size_t param_size = 0;
 
-  cl_status = clGetPlatformInfo(id, param_name, 0, NULL, &param_size);
+  cl_status = clGetPlatformInfo(/*id=*/0, param_name, 0, NULL, &param_size);
   char* some_info = (char*)malloc(sizeof(char) * param_size);
   cl_status = clGetPlatformInfo(id, param_name, param_size, some_info, NULL);
   if (cl_status != CL_SUCCESS) {
@@ -106,12 +106,16 @@ int main() {
   cl_uint cl_status = 0;
 
   // platforms num
+#if 0
   cl_status = clGetPlatformIDs(0, NULL, &platforms_num);
   CL_CHECK(cl_status);
   std::cout << "platforms_num:" << platforms_num << std::endl; 
-
+#else
+  platforms_num = 1;
   // platforms: ids
   platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platforms_num);
+  platforms[0] = NULL;
+#endif
   for (cl_uint id = 0; id < platforms_num; ++id) {
     displayPlatformInfo(platforms[id], CL_PLATFORM_PROFILE, "CL_PLATFORM_PROFILE");
     displayPlatformInfo(platforms[id], CL_PLATFORM_VERSION, "CL_PLATFORM_VERSION");
