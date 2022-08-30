@@ -16,6 +16,7 @@ Learn OpenCL step by step as below.
 You can choose one or two ways to use OpenCL:  
 1. Install OpenCL on Ubuntu 16.04 64-bit  
 2. Using OpenCL by Docker
+3. Using OpenCL by WSL2
 
 ## 2.1 Install OpenCL on Ubuntu 16.04 64-bit
 
@@ -183,6 +184,11 @@ in the Makefile :
 
 ref: How to compile OpenCL example in GCC?  
 https://forums.khronos.org/showthread.php/5728-How-to-compile-OpenCL-example-in-GCC
+
+# 3. Using OpenCL by WSL2
+
+- guide: https://devblogs.microsoft.com/commandline/oneapi-l0-openvino-and-opencl-coming-to-the-windows-subsystem-for-linux-for-intel-gpus/
+- link: https://www.intel.com/content/www/us/en/artificial-intelligence/harness-the-power-of-intel-igpu-on-your-machine.html
 
 # Other problems
 
